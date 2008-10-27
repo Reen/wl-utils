@@ -19,11 +19,7 @@
 
 namespace bio = boost::iostreams;
 
-std::size_t minParticles = 0;
-double minEnergy = -700.0;
-double energyBinWidth = 0.7;
-
-template<class T, class U, class V, class W> void printDoS(boost::numeric::ublas::matrix<T,U,V>& dos, std::size_t i, W extension)
+template<class T, class U, class V, class W> void printDoS(boost::numeric::ublas::matrix<T,U,V>& dos, std::size_t i, W extension, double minEnergy, double energyBinWidth, std::size_t minParticles)
 {
 	using namespace std;
 	ostringstream o;
@@ -87,6 +83,7 @@ int main (int argc, char const *argv[])
 	setupMatrix(qD, nParticles,nParticles,nEnergy,nEnergy);
 	int N1,N2;
 	double E1,E2;
+	std::cout << "Reading from stdin." << std::endl;
 	while(EOF != scanf("%i %i %lf %lf", &N1,&N2,&E1,&E2)) {
 		std::size_t i1 = static_cast<size_t>((E1-minEnergy)/energyBinWidth);
 		std::size_t i2 = static_cast<size_t>((E2-minEnergy)/energyBinWidth);
@@ -95,6 +92,7 @@ int main (int argc, char const *argv[])
 		q(ni1,ni2)(i1,i2)++;
 	}
 
+	std::cout << "Converting matrix to double." << std::endl;
 	for (std::size_t ni = 0; ni < qD.size1(); ++ni)
 	{
 		int s_ni = int(ni);
@@ -128,6 +126,7 @@ int main (int argc, char const *argv[])
 		}
 	}
 
+	std::cout << "Starting power method iteration." << std::endl;
 	dos_matrix_type dos(nParticles,nEnergy);
 	dos_matrix_type dos_old(nParticles,nEnergy);
 	std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
@@ -185,13 +184,14 @@ int main (int argc, char const *argv[])
 		dos_old = dos;
 		if(converged)
 		{
-			printDoS(dos,i, "parq");
+			printDoS(dos,i, "parq", minEnergy, energyBinWidth, minParticles);
 			break;
 		}
 
 		if (i%1000 == 1)
 		{
-			printDoS(dos,i, "parq");
+			std::cout << "Writing DOS of iteration " << i << " to disk." << std::endl;
+			printDoS(dos,i, "parq", minEnergy, energyBinWidth, minParticles);
 		}
 	}
 
