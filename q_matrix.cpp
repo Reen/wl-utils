@@ -76,20 +76,24 @@ int main (int argc, char const *argv[])
 
 	q_matrix_type q;
 	qD_matrix_type qD;
-	std::size_t nParticles(111), nEnergy(500), minParticles(0);
-	double minEnergy(-700.0), maxEnergy(20), energyBinWidth((maxEnergy-minEnergy)/nEnergy);
+	std::size_t nParticles(111), nEnergy(500), minParticles(0), maxParticles(minParticles + nParticles);
+	double minEnergy(-700.0), maxEnergy(20.0), energyBinWidth((maxEnergy-minEnergy)/nEnergy);
 
-	setupMatrix(q, nParticles,nParticles,nEnergy,nEnergy);
+	setupMatrix(q , nParticles,nParticles,nEnergy,nEnergy);
 	setupMatrix(qD, nParticles,nParticles,nEnergy,nEnergy);
 	int N1,N2;
 	double E1,E2;
 	std::cout << "Reading from stdin." << std::endl;
 	while(EOF != scanf("%i %i %lf %lf", &N1,&N2,&E1,&E2)) {
-		std::size_t i1 = static_cast<size_t>((E1-minEnergy)/energyBinWidth);
-		std::size_t i2 = static_cast<size_t>((E2-minEnergy)/energyBinWidth);
-		std::size_t ni1 = N1-minParticles;
-		std::size_t ni2 = N2-minParticles;
-		q(ni1,ni2)(i1,i2)++;
+		//std::cout << N1 << " " << N2 << " " << E1 << " " << E2 << "\n";
+		if(N1 >= minParticles && N2 <= maxParticles && E1 > minEnergy && E2 < maxEnergy) {
+			std::size_t i1 = static_cast<size_t>((E1-minEnergy)/energyBinWidth);
+			std::size_t i2 = static_cast<size_t>((E2-minEnergy)/energyBinWidth);
+			std::size_t ni1 = N1-minParticles;
+			std::size_t ni2 = N2-minParticles;
+			q(ni1,ni2)(i1,i2)++;
+		}
+		while(getchar() != '\n') {}
 	}
 
 	std::cout << "Converting matrix to double." << std::endl;
