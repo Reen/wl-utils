@@ -14,6 +14,7 @@ private:
 	double max_energy_;
 	double energy_bin_width_;
 	std::size_t n_energy_;
+  int threads_;
 	
 	void set_n_particles() {
 		n_particles_ = max_particles_ - min_particles_ + 1;
@@ -32,12 +33,14 @@ public:
 	const double & max_energy() const { return max_energy_; }
 	const std::size_t & n_energy() const { return n_energy_; }
 	const double & energy_bin_width() const { return energy_bin_width_; }
+  const int & threads() const { return threads_; }
 	
 	void set_min_particles(const std::size_t & min_particles) { min_particles_ = min_particles; set_n_particles(); }
 	void set_max_particles(const std::size_t & max_particles) { max_particles_ = max_particles; set_n_particles(); }
 	void set_min_energy(const double & min_energy) { min_energy_ = min_energy; set_energy_bin_width(); }
 	void set_max_energy(const double & max_energy) { max_energy_ = max_energy; set_energy_bin_width(); }
 	void set_n_energy(const std::size_t & n_energy) { n_energy_ = n_energy; set_energy_bin_width(); }
+  void set_threads(const int& threads) { threads_ = threads; }
 	
 private:
   friend class boost::serialization::access;

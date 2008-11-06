@@ -48,6 +48,7 @@ int main (int argc, char *argv[])
 		TCLAP::ValueArg<double> eminArg("","emin","Minimum energy.",true,-700.0,"float", cmd);
 		TCLAP::ValueArg<double> emaxArg("","emax","Maximum energy.",true,20.0,"float", cmd);
 		TCLAP::ValueArg<std::string> outArg("o","out","Filename for serialized output.",false,"","filename.gz", cmd);
+    TCLAP::ValueArg<int> nThreadsArg("j", "threads", "Number of threads to use for DoS calculation.", false, 1, "int", cmd);
     TCLAP::SwitchArg loadArg("l", "load", "If serialized matrix should be read instead of parQ data.", cmd);
 
 		cmd.parse( argc, argv );
@@ -61,6 +62,7 @@ int main (int argc, char *argv[])
 		s->set_min_energy(eminArg.getValue());
 		s->set_max_energy(emaxArg.getValue());
 		s->set_n_energy(nEnergyArg.getValue());
+    s->set_threads(nThreadsArg.getValue());
 		
     out_filename = outArg.getValue();
     load_archive = loadArg.getValue();

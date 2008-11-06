@@ -229,14 +229,16 @@ public:
   	dos_matrix_t dos_old(nParticles,nEnergy);
   	std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
     
+    
+    omp_set_num_threads(s->threads());
+    boost::timer t;
     while (true)
     {
-      boost::progress_timer t;
+      
       i++;
       dos.clear();
       // do the matrix-vector-multiplication
       double n(0);
-      omp_set_num_threads(2);
 #pragma omp parallel for reduction(+:n), default(shared)
       for (std::size_t nj = 0; nj < outer_rows_; ++nj)
       {
@@ -279,9 +281,10 @@ public:
         break;
       }
 
-      if (i%100 == 0)
-      {
+      if (i%100 == 0) {
+        std::cout << "100 iterations took " << t.elapsed()  << " " << n << " seconds." << std::endl;
         std::cout << "Writing DOS of iteration " << i << " to disk." << std::endl;
+        t.restart();
         //printDoS(dos,i, "parq", minEnergy, energyBinWidth, minParticles);
       }
     }
