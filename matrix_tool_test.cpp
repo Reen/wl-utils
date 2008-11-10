@@ -53,5 +53,5 @@ BOOST_AUTO_TEST_CASE( serialization_test )
 
 BOOST_AUTO_TEST_CASE( power_iteration_test )
 {
-  BOOST_CHECK( true )
+  BOOST_CHECK( true );
 }

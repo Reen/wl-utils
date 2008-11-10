@@ -328,6 +328,7 @@ public:
     io::filtering_ostream out;
     out.push(io::gzip_compressor());
     out.push(io::file_sink(filename));
+    State::instance->print_to_stream(out);
     for (std::size_t i = 0; i < dos.size1(); ++i) {
       std::size_t n = i + minParticles;
       for (std::size_t j = 0; j < dos.size2(); ++j) {

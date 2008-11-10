@@ -41,7 +41,18 @@ public:
 	void set_max_energy(const double & max_energy) { max_energy_ = max_energy; set_energy_bin_width(); }
 	void set_n_energy(const std::size_t & n_energy) { n_energy_ = n_energy; set_energy_bin_width(); }
   void set_threads(const int& threads) { threads_ = threads; }
-	
+
+  void print_to_stream(std::ostream& os) {
+    os
+    << "# nmin     " << min_particles_    << "\n"
+    << "# nmax     " << max_particles_    << "\n"
+    << "# emin     " << min_energy_       << "\n"
+    << "# emax     " << max_energy_       << "\n"
+    << "# binwidth " << energy_bin_width_ << "\n"
+    << "# N_N      " << n_particles_      << "\n"
+    << "# E_N      " << n_energy_         << "\n";
+  }
+
 private:
   friend class boost::serialization::access;
   
