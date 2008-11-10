@@ -33,6 +33,7 @@ public:
   typedef boost::numeric::ublas::matrix< double, boost::numeric::ublas::column_major > dos_matrix_t;
 private:
   matrix_t q_matrix_;
+  dos_matrix_t dos_matrix_;
   std::size_t outer_cols_;
   std::size_t outer_rows_;
   std::size_t inner_cols_;
@@ -296,6 +297,7 @@ public:
       dos_old = dos;
       if(converged)
       {
+        dos_matrix_ = dos;
         //printDoS(dos,i, "parq", minEnergy, energyBinWidth, minParticles);
         break;
       }
@@ -305,6 +307,26 @@ public:
         std::cout << "Writing DOS of iteration " << i << " to disk." << std::endl;
         t.restart();
         //printDoS(dos,i, "parq", minEnergy, energyBinWidth, minParticles);
+      }
+    }
+    return;
+  }
+  
+  void check_detailed_balance() {
+    matrix_t balance(outer_rows_, inner_rows_);
+    for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
+      int s_ni = int(ni);
+      // major row
+      for (std::size_t nj = std::max(s_ni-1, 0);
+           nj < std::min(ni+2, outer_rows_);
+           ++nj) {
+        // minor column
+        for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
+          // minor row
+          for (std::size_t ej = 0; ej < inner_rows_; ++ej) {
+            balance(ni,nj)(ei,ej) = q_matrix_(ni,nj)(ei,ej)*dos_matrix_(ni,ei) - q_matrix_(nj,ni)(ej,ei)*dos_matrix_(nj,ej);
+          }
+        }
       }
     }
   }

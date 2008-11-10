@@ -149,7 +149,8 @@ int main (int argc, char *argv[])
 	  }
 		std::cerr << "calculating" << std::endl;
     qD.calculate_dos();
-		
+    std::cerr << "checking detailed balance" << std::endl;
+    qD.check_detailed_balance();
 		
 	} else if (command == "dos") {
 		
