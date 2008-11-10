@@ -303,8 +303,8 @@ public:
       }
 
       if (i%100 == 0) {
-        std::cout << "100 iterations took " << t.elapsed()  << " " << n << " seconds." << std::endl;
-        std::cout << "Writing DOS of iteration " << i << " to disk." << std::endl;
+        std::cout << "100 iterations took " << t.elapsed()  << " seconds, current dist: " << dist << std::endl;
+        //std::cout << "Writing DOS of iteration " << i << " to disk." << std::endl;
         t.restart();
         //printDoS(dos,i, "parq", minEnergy, energyBinWidth, minParticles);
       }
