@@ -1,6 +1,8 @@
 #ifndef _Q_MATRIX_H_
 #define _Q_MATRIX_H_
 
+#include <iomanip>
+
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/banded.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -25,6 +27,8 @@
 
 #include "state.h"
 
+namespace io = boost::iostreams;
+
 template<class T>
 class QMatrix : boost::noncopyable {
 public:
@@ -38,10 +42,10 @@ private:
   std::size_t outer_rows_;
   std::size_t inner_cols_;
   std::size_t inner_rows_;
-  
-  
+
+
   template<class U> friend class QMatrix;
-  
+
   void resize() {
     q_matrix_.resize(outer_cols_,outer_rows_,1,1);
     for (int i = 0; i < static_cast<int>(q_matrix_.size1()); ++ i) {
@@ -66,7 +70,7 @@ private:
     }
     do {
       if (EOF != sscanf(buf,"%i %i %lf %lf", &N1,&N2,&E1,&E2)) {
-        std::size_t ni1 = N1-minParticles;  
+        std::size_t ni1 = N1-minParticles;
         std::size_t ni2 = N2-minParticles;
         //std::cout << N << " " << N1 << " " << N2 << " " << E1 << " " << E2 << std::endl;
         if (ni1 < outer_cols_ && ni2 < outer_rows_) {
@@ -89,7 +93,7 @@ public:
           std::size_t n4) {
     resize(n1, n2, n3, n4);
   }
-  
+
   QMatrix()
       : outer_cols_(0),
         outer_rows_(0),
@@ -97,7 +101,7 @@ public:
         inner_rows_(0) {
     resize();
   }
-  
+
   void resize(std::size_t n1, std::size_t n2, std::size_t n3, std::size_t n4) {
     outer_cols_ = n1;
     outer_rows_ = n2;
@@ -105,24 +109,24 @@ public:
     inner_rows_ = n4;
     resize();
   }
-  
+
   gzFile read_file(const std::string &filename,
                    std::size_t N = std::numeric_limits<std::size_t>::max()) {
     gzFile file = gzopen(filename.c_str(), "r");
     return read_file_(file,N);
   }
-  
+
   gzFile read_file(gzFile file,
                    std::size_t N = std::numeric_limits<std::size_t>::max()) {
     return read_file_(file,N);
   }
-  
+
   void stochastic_from(const QMatrix<std::size_t> &mat) {
     assert(mat.inner_cols_ == inner_cols_);
     assert(mat.inner_rows_ == inner_rows_);
     assert(mat.outer_cols_ == outer_cols_);
     assert(mat.outer_rows_ == outer_rows_);
-    
+
     for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
       int s_ni = int(ni);
       // minor column
@@ -154,7 +158,7 @@ public:
       }
     }
   }
-  
+
   void operator-=(const QMatrix<T> &mat) {
     assert(mat.inner_cols_ == inner_cols_);
     assert(mat.inner_rows_ == inner_rows_);
@@ -178,7 +182,7 @@ public:
       }
     }
   }
-  
+
   bool operator==(const QMatrix<T> &mat) {
     bool ret(true);
     for (int i = 0; i < static_cast<int>(outer_cols_); ++ i) {
@@ -190,7 +194,7 @@ public:
     }
     return ret;
   }
-  
+
   void clear() {
     for (int i = 0; i < static_cast<int>(outer_cols_); ++ i) {
       for (int j = std::max(i-1, 0);
@@ -200,12 +204,12 @@ public:
       }
     }
   }
-  
+
   const inner_matrix_t& operator()(const std::size_t &i,
                                    const std::size_t &j) const {
     return q_matrix_(i,j);
   }
-  
+
   inner_matrix_t& operator()(const std::size_t &i,
                              const std::size_t &j) {
     assert(0 <= i);
@@ -214,7 +218,7 @@ public:
     assert(j < outer_cols_);
     return q_matrix_(i,j);
   }
-  
+
   void print() const {
     for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
       int s_ni = int(ni);
@@ -239,19 +243,19 @@ public:
       }
     }
   }
-  
+
   void calculate_dos() {
     State::lease s;
     std::size_t nParticles(s->n_particles());
     std::size_t nEnergy(s->n_energy());
-  
+
     double zero(0), one(1), crit(1.0e-7), dist(0);
     std::size_t i(0);
     dos_matrix_t dos(nParticles,nEnergy);
   	dos_matrix_t dos_old(nParticles,nEnergy);
   	std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
-    
-    
+
+
     omp_set_num_threads(s->threads());
     boost::timer t;
     while (true) {
@@ -298,20 +302,43 @@ public:
       if(converged)
       {
         dos_matrix_ = dos;
-        //printDoS(dos,i, "parq", minEnergy, energyBinWidth, minParticles);
         break;
       }
 
       if (i%100 == 0) {
-        std::cout << "100 iterations took " << t.elapsed()  << " seconds, current dist: " << dist << std::endl;
-        //std::cout << "Writing DOS of iteration " << i << " to disk." << std::endl;
+        std::cout << "I: "
+                  << std::setw(10) << std::right << i
+                  << " 100 iterations took "
+                  << std::setw(10) << std::right << t.elapsed()
+                  << " seconds, current dist: " << dist
+                  << std::endl;
+        print_dos(dos, i);
         t.restart();
-        //printDoS(dos,i, "parq", minEnergy, energyBinWidth, minParticles);
       }
     }
     return;
   }
-  
+
+  void print_dos(const dos_matrix_t& dos, std::size_t iteration) const {
+    char filename[50];
+    sprintf( filename, "dos.%05lu.dat.gz", iteration);
+    State::lease s;
+    std::size_t minParticles(s->min_particles()), maxParticles(s->max_particles());
+    double minEnergy(s->min_energy()), maxEnergy(s->max_energy()), energyBinWidth(s->energy_bin_width());
+    io::filtering_ostream out;
+    out.push(io::gzip_compressor());
+    out.push(io::file_sink(filename));
+    for (std::size_t i = 0; i < dos.size1(); ++i) {
+      std::size_t n = i + minParticles;
+      for (std::size_t j = 0; j < dos.size2(); ++j) {
+        out << std::setw(20) << std::right << n
+            << std::setw(20) << std::right << j
+            << std::setw(20) << std::right << dos(i,j)
+            << "\n";
+      }
+    }
+  }
+
   void check_detailed_balance() {
     matrix_t balance(outer_rows_, inner_rows_);
     for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
@@ -330,23 +357,17 @@ public:
       }
     }
   }
-  
-/*  void save_to(std::string filename) {
-    std::ofstream ofs(filename.c_str(), std::ios::binary);
-    boost::archive::binary_oarchive oa(ofs);
-    oa << q_matrix_(0,0);
-  }*/
-  
+
 private:
   friend class boost::serialization::access;
-  
+
   template<class Archive>
   void save(Archive & ar, const unsigned int /* version */) const {
     ar << outer_cols_;
     ar << outer_rows_;
     ar << inner_cols_;
     ar << inner_rows_;
-    
+
     for (int i = 0; i < static_cast<int>(outer_cols_); ++i) {
       for (int j = std::max(i-1, 0);
            j < std::min(i+2, static_cast<int>(outer_rows_));
@@ -355,7 +376,7 @@ private:
       }
     }
   }
-  
+
   template<class Archive>
   void load(Archive & ar, const unsigned int /* version */) {
     ar >> outer_cols_;
@@ -373,10 +394,10 @@ private:
       }
     }
   }
-  
+
 public:
   BOOST_SERIALIZATION_SPLIT_MEMBER()
-  
+
 };
 
 #endif /* _Q_MATRIX_H_ */

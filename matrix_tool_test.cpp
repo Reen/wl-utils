@@ -45,4 +45,13 @@ BOOST_AUTO_TEST_CASE( serialization_test )
   }
   BOOST_CHECK( qD1 == qD2 );
   BOOST_CHECK_EQUAL( qD2(99,99)(31,96) , 3.91 );
+
+  {
+    system("rm matrix_tool_test.dat.gz");
+  }
+}
+
+BOOST_AUTO_TEST_CASE( power_iteration_test )
+{
+  BOOST_CHECK( true )
 }
