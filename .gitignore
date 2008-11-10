@@ -1,2 +1,4 @@
+Makefile*
 matrix_tool
+matrix_tool_test
 *.o

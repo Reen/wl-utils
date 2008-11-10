@@ -159,7 +159,7 @@ public:
     assert(mat.inner_rows_ == inner_rows_);
     assert(mat.outer_cols_ == outer_cols_);
     assert(mat.outer_rows_ == outer_rows_);
-    
+    // TODO: rewrite using -= operator of inner matrices
     for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
       int s_ni = int(ni);
       // minor column
@@ -178,6 +178,18 @@ public:
     }
   }
   
+  bool operator==(const QMatrix<T> &mat) {
+    bool ret(true);
+    for (int i = 0; i < static_cast<int>(outer_cols_); ++ i) {
+      for (int j = std::max(i-1, 0);
+           ret && (j < std::min(i+2, static_cast<int>(outer_rows_)));
+           ++j) {
+        ret = (ret && (0 == boost::numeric::ublas::norm_inf(q_matrix_(i,j) - mat.q_matrix_(i,j))));
+      }
+    }
+    return ret;
+  }
+  
   void clear() {
     for (int i = 0; i < static_cast<int>(outer_cols_); ++ i) {
       for (int j = std::max(i-1, 0);
@@ -190,6 +202,15 @@ public:
   
   const inner_matrix_t& operator()(const std::size_t &i,
                                    const std::size_t &j) const {
+    return q_matrix_(i,j);
+  }
+  
+  inner_matrix_t& operator()(const std::size_t &i,
+                             const std::size_t &j) {
+    assert(0 <= i);
+    assert(0 <= j);
+    assert(i < outer_rows_);
+    assert(j < outer_cols_);
     return q_matrix_(i,j);
   }
   
@@ -232,9 +253,7 @@ public:
     
     omp_set_num_threads(s->threads());
     boost::timer t;
-    while (true)
-    {
-      
+    while (true) {
       i++;
       dos.clear();
       // do the matrix-vector-multiplication
@@ -290,11 +309,11 @@ public:
     }
   }
   
-  void save_to(std::string filename) {
+/*  void save_to(std::string filename) {
     std::ofstream ofs(filename.c_str(), std::ios::binary);
     boost::archive::binary_oarchive oa(ofs);
     oa << q_matrix_(0,0);
-  }
+  }*/
   
 private:
   friend class boost::serialization::access;

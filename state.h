@@ -24,7 +24,7 @@ private:
 		energy_bin_width_ = (max_energy_-min_energy_)/n_energy_;
 	}
 public:
-	State(boost::restricted) : n_energy_(1.0) {}
+	State(boost::restricted) : n_energy_(1) {}
 	
 	const std::size_t & min_particles() const { return min_particles_; }
 	const std::size_t & max_particles() const { return max_particles_; }
