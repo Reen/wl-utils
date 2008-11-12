@@ -308,9 +308,8 @@ public:
       if (i%100 == 0) {
         std::cout << "I: "
                   << std::setw(10) << std::right << i
-                  << " 100 iterations took "
-                  << std::setw(10) << std::right << t.elapsed()
-                  << " seconds, current dist: " << dist
+                  << std::setw(10) << std::right << (t.elapsed()/100.0)
+                  << " iterations/seconds, current dist: " << dist
                   << std::endl;
         print_dos(dos, i);
         t.restart();
