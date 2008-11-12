@@ -119,7 +119,7 @@ public:
 			
 			double sum_n_vapor = 0.0;
 			double sum_n_liquid = 0.0;
-			//double dummy = (*this)(mu);
+			double dummy = (*this)(mu);
 			BOOST_FOREACH( Point& p, points)
 			{
 				if(p.sl < -300) continue;
