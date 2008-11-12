@@ -331,10 +331,12 @@ public:
     for (std::size_t i = 0; i < dos.size1(); ++i) {
       std::size_t n = i + minParticles;
       for (std::size_t j = 0; j < dos.size2(); ++j) {
-        out << std::setw(20) << std::right << n
-            << std::setw(20) << std::right << j
-            << std::setw(20) << std::right << dos(i,j)
-            << "\n";
+        if(dos(i,j) > 0.0) {
+          out << std::setw(20) << std::right << n
+              << std::setw(20) << std::right << j
+              << std::setw(20) << std::right << dos(i,j)
+              << "\n";
+        }
       }
     }
   }
