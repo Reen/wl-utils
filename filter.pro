@@ -22,10 +22,10 @@ linux-g++-64 {
 LIBS += $$BOOST
 
 CONFIG(debug, debug|release) {
-	TARGET = matrix_tool_debug
+	TARGET = filter_debug
 	QMAKE_CXXFLAGS_DEBUG = -O0 -g
 } else {
-	TARGET  = matrix_tool
+	TARGET  = filter
 	DEFINES = NDEBUG
 	QMAKE_CXXFLAGS_RELEASE = -O3 -msse -msse2 -ftree-vectorize
 }

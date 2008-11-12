@@ -21,5 +21,5 @@ linux-g++-64 {
 
 LIBS += $$BOOST
 #DEFINES = NDEBUG
-QMAKE_CXXFLAGS_RELEASE = -O3 -fomit-frame-pointer -ftree-vectorize -fopenmp
+QMAKE_CXXFLAGS_RELEASE = -O3 -msse -msse2 -fomit-frame-pointer -ftree-vectorize -fopenmp
 
