@@ -66,7 +66,9 @@ private:
       // skip comment lines
       std::cerr << buf;
     }
+    std::size_t count(0);
     do {
+      count++;
       if (EOF != sscanf(buf,"%i %i %lf %lf", &N1,&N2,&E1,&E2)) {
         std::size_t ni1 = N1-minParticles;
         std::size_t ni2 = N2-minParticles;
@@ -80,7 +82,7 @@ private:
         }
       }
     } while(--N >  0 && (Z_NULL != gzgets(file, buf, 1000)));
-    std::cerr << cc << " " << N << std::endl;
+    std::cerr << cc << " " << count << std::endl;
     return file;
   }
 public:
