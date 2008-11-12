@@ -6,8 +6,8 @@
 #include <sstream>
 #include <limits>
 
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 #include <boost/assign/std/vector.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -122,7 +122,7 @@ int main (int argc, char *argv[])
 		io::filtering_ostream out;
     out.push(io::gzip_compressor());
     out.push(io::file_sink(out_filename));
-    boost::archive::binary_oarchive oa(out);
+    boost::archive::text_oarchive oa(out);
     State::lease s;
     s->save_to(oa);
     oa & qD;
@@ -134,7 +134,7 @@ int main (int argc, char *argv[])
 	    io::filtering_istream in;
       in.push(io::gzip_decompressor());
       in.push(io::file_source(file1));
-      boost::archive::binary_iarchive ia(in);
+      boost::archive::text_iarchive ia(in);
       State::lease s;
       s->load_from(ia);
       ia & qD;

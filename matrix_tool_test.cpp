@@ -2,8 +2,9 @@
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -29,7 +30,7 @@ BOOST_AUTO_TEST_CASE( serialization_test )
     io::filtering_ostream out;
     out.push(io::gzip_compressor());
     out.push(io::file_sink(filename));
-    boost::archive::binary_oarchive oa(out);
+    boost::archive::text_oarchive oa(out);
     oa & qD1;
   }
   
@@ -39,7 +40,7 @@ BOOST_AUTO_TEST_CASE( serialization_test )
     io::filtering_istream in;
     in.push(io::gzip_decompressor());
     in.push(io::file_source(filename));
-    boost::archive::binary_iarchive ia(in);
+    boost::archive::text_iarchive ia(in);
     
     ia & qD2;
   }
