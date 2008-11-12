@@ -1,7 +1,7 @@
 TEMPLATE = app
 CONFIG   = release incremental global_init_link_order lib_version_first plugin_no_soname link_prl build_all warn_off static
 
-HEADERS  = 
+HEADERS  = include/rootfinding.hpp
 SOURCES  = phase.cpp
 INCLUDEPATH = ./include
 LIBS     = 
