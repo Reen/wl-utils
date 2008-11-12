@@ -21,8 +21,6 @@
 
 #include <boost/utility.hpp>
 
-#include <omp.h>
-
 #include "zlib.h"
 
 #include "state.h"
@@ -256,14 +254,12 @@ public:
   	std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
 
 
-    omp_set_num_threads(s->threads());
     boost::timer t;
     while (true) {
       i++;
       dos.clear();
       // do the matrix-vector-multiplication
       double n(0);
-#pragma omp parallel for reduction(+:n), default(shared)
       for (std::size_t nj = 0; nj < outer_rows_; ++nj)
       {
         int s_nj = int(nj);
