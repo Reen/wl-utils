@@ -9,6 +9,11 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/uniform_real.hpp>
+
 #include "q_matrix.h"
 
 namespace io = boost::iostreams;
@@ -18,12 +23,22 @@ BOOST_AUTO_TEST_CASE( serialization_test )
   QMatrix<double> qD1(100,100,100,100);
   std::string filename("matrix_tool_test.dat.gz");
   {
+    boost::mt19937 rng;
+    boost::uniform_int<> dir(-1,1);
+    boost::uniform_int<> row(0,99);
+    boost::uniform_real<> value(0.0, 1.0);
+    boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die_dir(rng, dir);
+    boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die_row(rng, row);
+    boost::variate_generator<boost::mt19937&, boost::uniform_real<> > die_val(rng, value);
+
     // set some data
-    qD1(42,43)(31,26) = 3.41;
-    qD1(4,4)(31,26)   = 13.41;
-    qD1(2,3)(31,26)   = 5.41;
-    qD1(72,71)(91,26) = 3.51;
-    qD1(99,99)(31,96)= 3.91;
+    for (unsigned int i = 0; i < 1000000; ++i) {
+      std::size_t a = die_row();
+      std::size_t b = (a > 1 && a < 99 ? a + die_dir() : a);
+      std::size_t c = die_row();
+      std::size_t d = die_row();
+      qD1(a,b)(c,d) = die_val();
+    }
   }
   {
     // writing test
@@ -45,9 +60,9 @@ BOOST_AUTO_TEST_CASE( serialization_test )
     ia & qD2;
   }
   BOOST_CHECK( qD1 == qD2 );
-  BOOST_CHECK_EQUAL( qD2(99,99)(31,96) , 3.91 );
 
   {
+    // clean up afterwards
     system("rm matrix_tool_test.dat.gz");
   }
 }
