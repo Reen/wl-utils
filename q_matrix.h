@@ -307,7 +307,7 @@ public:
         std::cout << "I: "
                   << std::setw(10) << std::right << i
                   << std::setw(10) << std::right << (t.elapsed()/100.0)
-                  << " iterations/seconds, current dist: " << dist
+                  << " seconds/iterations, current dist: " << dist
                   << std::endl;
         print_dos(dos, i);
         t.restart();
@@ -332,6 +332,7 @@ public:
         if(dos(i,j) > 0.0) {
           out << std::setw(20) << std::right << n
               << std::setw(20) << std::right << j
+              << std::setw(20) << std::right << log(dos(i,j))
               << std::setw(20) << std::right << dos(i,j)
               << "\n";
         }
