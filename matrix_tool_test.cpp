@@ -20,23 +20,29 @@ namespace io = boost::iostreams;
 
 BOOST_AUTO_TEST_CASE( serialization_test )
 {
-  QMatrix<double> qD1(100,100,100,100);
+  std::size_t outer_size(100);
+  std::size_t inner_size(100);
+  QMatrix<double> qD1(outer_size,outer_size,inner_size,inner_size);
   std::string filename("matrix_tool_test.dat.gz");
   {
+    std::size_t outer_last_index = outer_size-1;
+    std::size_t inner_last_index = inner_size-1;
     boost::mt19937 rng;
     boost::uniform_int<> dir(-1,1);
-    boost::uniform_int<> row(0,99);
+    boost::uniform_int<> outer(0,outer_last_index);
+    boost::uniform_int<> inner(0,inner_last_index);
     boost::uniform_real<> value(0.0, 1.0);
     boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die_dir(rng, dir);
-    boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die_row(rng, row);
+    boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die_outer(rng, outer);
+    boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die_inner(rng, inner);
     boost::variate_generator<boost::mt19937&, boost::uniform_real<> > die_val(rng, value);
 
     // set some data
     for (unsigned int i = 0; i < 1000000; ++i) {
-      std::size_t a = die_row();
-      std::size_t b = (a > 1 && a < 99 ? a + die_dir() : a);
-      std::size_t c = die_row();
-      std::size_t d = die_row();
+      std::size_t a = die_outer();
+      std::size_t b = (a > 1 && a < outer_last_index ? a + die_dir() : a);
+      std::size_t c = die_inner();
+      std::size_t d = die_inner();
       qD1(a,b)(c,d) = die_val();
     }
   }
