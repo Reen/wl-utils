@@ -326,13 +326,21 @@ public:
     out.push(io::gzip_compressor());
     out.push(io::file_sink(filename));
     State::instance->print_to_stream(out);
+    double fak = 1.0;
     for (std::size_t i = 0; i < dos.size1(); ++i) {
       std::size_t n = i + minParticles;
+      double fakln = 0.0;
+      if(n > 0) {
+        fak *= n;
+        fakln = n*log(volume)-log(fak);
+      }
       for (std::size_t j = 0; j < dos.size2(); ++j) {
         if(dos(i,j) > 0.0) {
+          double log_dos = log(dos(i,j));
           out << std::setw(20) << std::right << n
               << std::setw(20) << std::right << j
-              << std::setw(20) << std::right << log(dos(i,j))
+              << std::setw(20) << std::right << (log_dos + fakln)
+              << std::setw(20) << std::right << log_dos
               << std::setw(20) << std::right << dos(i,j)
               << "\n";
         }
