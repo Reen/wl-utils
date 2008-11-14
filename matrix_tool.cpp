@@ -85,7 +85,7 @@ int main (int argc, char *argv[])
 	if (command == "compare") {
 		std::size_t nParticles(State::instance->n_particles());
 		std::size_t nEnergy(State::instance->n_energy());
-		QMatrix<std::size_t> q(nParticles,nParticles,nEnergy,nEnergy);
+		QMatrix<uint32_t> q(nParticles,nParticles,nEnergy,nEnergy);
 		QMatrix<double> qD1(nParticles,nParticles,nEnergy,nEnergy);
 		QMatrix<double> qD2(nParticles,nParticles,nEnergy,nEnergy);
 		
@@ -110,7 +110,7 @@ int main (int argc, char *argv[])
 	} else if (command == "convert") {
 	  std::size_t nParticles(State::instance->n_particles());
 		std::size_t nEnergy(State::instance->n_energy());
-		QMatrix<std::size_t> q(nParticles,nParticles,nEnergy,nEnergy);
+		QMatrix<uint32_t> q(nParticles,nParticles,nEnergy,nEnergy);
 		QMatrix<double> qD(nParticles,nParticles,nEnergy,nEnergy);
 		
 		std::cerr << "reading " << file1 << std::endl;
@@ -127,7 +127,7 @@ int main (int argc, char *argv[])
     s->save_to(oa);
     oa & qD;
 	} else if (command == "balance") {
-	  QMatrix<std::size_t> q;
+	  QMatrix<uint32_t> q;
 		QMatrix<double> qD;
 		std::cerr << "reading " << file1 << std::endl;
 	  if(load_archive) {

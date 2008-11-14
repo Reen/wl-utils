@@ -27,12 +27,12 @@
 
 namespace io = boost::iostreams;
 
-template<class T>
+template<class matrix_float_t, class calc_float_t = double>
 class QMatrix : boost::noncopyable {
 public:
-  typedef boost::numeric::ublas::matrix<T, boost::numeric::ublas::column_major > inner_matrix_t;
+  typedef boost::numeric::ublas::matrix< matrix_float_t, boost::numeric::ublas::column_major > inner_matrix_t;
   typedef boost::numeric::ublas::banded_matrix< inner_matrix_t, boost::numeric::ublas::column_major > matrix_t;
-  typedef boost::numeric::ublas::matrix< double, boost::numeric::ublas::column_major > dos_matrix_t;
+  typedef boost::numeric::ublas::matrix< calc_float_t, boost::numeric::ublas::row_major > dos_matrix_t;
 private:
   matrix_t q_matrix_;
   dos_matrix_t dos_matrix_;
@@ -42,7 +42,7 @@ private:
   std::size_t inner_rows_;
 
 
-  template<class U> friend class QMatrix;
+  template<class U, class V> friend class QMatrix;
 
   void resize() {
     q_matrix_.resize(outer_cols_,outer_rows_,1,1);
@@ -121,7 +121,7 @@ public:
     return read_file_(file,N);
   }
 
-  void stochastic_from(const QMatrix<std::size_t> &mat) {
+  void stochastic_from(const QMatrix<uint32_t> &mat) {
     assert(mat.inner_cols_ == inner_cols_);
     assert(mat.inner_rows_ == inner_rows_);
     assert(mat.outer_cols_ == outer_cols_);
@@ -142,7 +142,7 @@ public:
           }
         }
         if (i_sum > 0) {
-          double d_sum(i_sum);
+          matrix_float_t d_sum(i_sum);
           // major row
           for (std::size_t nj = std::max(s_ni-1, 0);
                nj < std::min(ni+2, outer_rows_);
@@ -151,7 +151,7 @@ public:
             for (std::size_t ej = 0; ej < inner_rows_; ++ej) {
               // copy and divide by column sum
               q_matrix_(ni, nj)(ei, ej) =
-                static_cast<double>(mat(ni, nj)(ei, ej)) / d_sum;
+                static_cast<matrix_float_t>(mat(ni, nj)(ei, ej)) / d_sum;
             }
           }
         } // else -> all values in the column are zero so we do nothing
@@ -159,7 +159,7 @@ public:
     }
   }
 
-  void operator-=(const QMatrix<T> &mat) {
+  void operator-=(const QMatrix<matrix_float_t> &mat) {
     assert(mat.inner_cols_ == inner_cols_);
     assert(mat.inner_rows_ == inner_rows_);
     assert(mat.outer_cols_ == outer_cols_);
@@ -183,7 +183,7 @@ public:
     }
   }
 
-  bool operator==(const QMatrix<T> &mat) {
+  bool operator==(const QMatrix<matrix_float_t> &mat) {
     bool ret(true);
     for (int i = 0; i < static_cast<int>(outer_cols_); ++ i) {
       for (int j = std::max(i-1, 0);
@@ -249,7 +249,7 @@ public:
     std::size_t nParticles(s->n_particles());
     std::size_t nEnergy(s->n_energy());
 
-    double zero(0), one(1), crit(1.0e-7), dist(0);
+    calc_float_t zero(0), one(1), crit(1.0e-7), dist(0);
     std::size_t i(0);
     dos_matrix_t dos(nParticles,nEnergy);
   	dos_matrix_t dos_old(nParticles,nEnergy);
@@ -271,7 +271,7 @@ public:
           {
             boost::numeric::ublas::matrix_column< inner_matrix_t > m1(q_matrix_(ni, nj), ej);
             boost::numeric::ublas::matrix_row< dos_matrix_t > m2(dos_old, ni);
-            double incr(boost::numeric::ublas::inner_prod(m1,m2));
+            calc_float_t incr(boost::numeric::ublas::inner_prod(m1,m2));
             //incr = std::inner_product(m1.begin(), m1.end(), m2.begin(), incr);
             dos(nj, ej) += incr;
             n += incr;
@@ -281,7 +281,7 @@ public:
       }
       // check wether the iteration has converged
       bool converged = true;
-      for (dos_matrix_t::array_type::iterator
+      for (typename dos_matrix_t::array_type::iterator
            i1(dos.data().begin()), i2(dos_old.data().begin());
            i1 < dos.data().end();
            ++i1, ++i2) {
@@ -319,13 +319,19 @@ public:
   void print_dos(const dos_matrix_t& dos, std::size_t iteration) const {
     char filename[50];
     sprintf( filename, "dos.%05lu.dat.gz", iteration);
+
     State::lease s;
-    std::size_t minParticles(s->min_particles()), maxParticles(s->max_particles());
-    double minEnergy(s->min_energy()), maxEnergy(s->max_energy()), energyBinWidth(s->energy_bin_width());
+    std::size_t minParticles(s->min_particles());
+    std::size_t maxParticles(s->max_particles());
+    double minEnergy(s->min_energy());
+    double maxEnergy(s->max_energy());
+    double energyBinWidth(s->energy_bin_width());
+    double volume(s->volume());
+
     io::filtering_ostream out;
     out.push(io::gzip_compressor());
     out.push(io::file_sink(filename));
-    State::instance->print_to_stream(out);
+    s->print_to_stream(out);
     double fak = 1.0;
     for (std::size_t i = 0; i < dos.size1(); ++i) {
       std::size_t n = i + minParticles;
