@@ -84,6 +84,8 @@ class CmdLine : public CmdLineInterface
 		 */
 		int _numRequired;
 
+		std::set< Arg* > _argsRequired;
+
 		/**
 		 * The character that is used to separate the argument flag/name
 		 * from the value.  Defaults to ' ' (space).
@@ -368,7 +370,11 @@ inline void CmdLine::add( Arg* a )
 	a->addToList( _argList );
 
 	if ( a->isRequired() )
+	{
 		_numRequired++;
+		_argsRequired.insert(a);
+	}
+
 }
 
 inline void CmdLine::parse(int argc, char** argv)
@@ -383,7 +389,7 @@ inline void CmdLine::parse(int argc, char** argv)
 		args.push_back(argv[i]);
 
 	int requiredCount = 0;
-
+	std::set<Arg*> seenArgs;
   	for (int i = 0; static_cast<unsigned int>(i) < args.size(); i++)
 	{
 		bool matched = false;
@@ -391,8 +397,10 @@ inline void CmdLine::parse(int argc, char** argv)
         {
 			if ( (*it)->processArg( &i, args ) )
 			{
-				requiredCount += _xorHandler.check( *it );
 				matched = true;
+				std::set<Arg*> requiredByArg = (*it)->requiredArgs();
+				_argsRequired.insert(requiredByArg.begin(), requiredByArg.end());
+				seenArgs.insert(*it);
 				break;
 			}
         }
@@ -406,13 +414,31 @@ inline void CmdLine::parse(int argc, char** argv)
 			throw(CmdLineParseException("Couldn't find match for argument",
 			                             args[i]));
     }
-
-	if ( requiredCount < _numRequired )
-		throw(CmdLineParseException("One or more required arguments missing!"));
-
-	if ( requiredCount > _numRequired )
-		throw(CmdLineParseException("Too many arguments!"));
-
+	std::vector<Arg*> intersection;
+	std::set_difference(_argsRequired.begin(), _argsRequired.end(), seenArgs.begin(), seenArgs.end(), std::back_inserter(intersection));
+	std::ostringstream oss;
+	for( std::vector<Arg*>::iterator iter = intersection.begin(); iter != intersection.end(); ++iter )
+	{
+		StdOutput::spacePrint( oss, (*iter)->longID(), 75, 3, 3 );
+		StdOutput::spacePrint( oss, (*iter)->getDescription(), 75, 5, 0 );
+		oss << std::endl;
+	}
+	if ( intersection.size() != 0 )
+	{
+		if( _argsRequired.size() > seenArgs.size() )
+		{
+			std::ostringstream ex;
+			ex << "\nMissing at least " << (_argsRequired.size() - seenArgs.size()) << " arguments:" << std::endl;
+			ex << oss.str();
+			throw(CmdLineParseException(ex.str()));
+		}
+		else if( _argsRequired.size() < seenArgs.size() )
+		{
+			std::ostringstream ex;
+			ex << (_argsRequired.size() - seenArgs.size()) << " arguments too much." << std::endl;
+			throw(CmdLineParseException(ex.str()));
+		}
+	}
 	} catch ( ArgException e ) { _output->failure(*this,e); exit(1); }
 }
 

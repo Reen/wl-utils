@@ -67,6 +67,23 @@ class StdOutput : public CmdLineOutput
 		virtual void failure(CmdLineInterface& c, 
 						     ArgException& e );
 
+		/**
+		 * This function inserts line breaks and indents long strings
+		 * according the  params input. It will only break lines at spaces,
+		 * commas and pipes.
+		 * \param os - The stream to be printed to.
+		 * \param s - The string to be printed.
+		 * \param maxWidth - The maxWidth allowed for the output line.
+		 * \param indentSpaces - The number of spaces to indent the first line.
+		 * \param secondLineOffset - The number of spaces to indent the second
+		 * and all subsequent lines in addition to indentSpaces.
+		 */
+		static void spacePrint( std::ostream& os,
+						 const std::string& s,
+						 int maxWidth,
+						 int indentSpaces,
+						 int secondLineOffset );
+
 	protected:
 
         /**
@@ -83,23 +100,6 @@ class StdOutput : public CmdLineOutput
 		 * \param os - The stream to write the message to.
 		 */
 		void _longUsage( CmdLineInterface& c, std::ostream& os ) const;
-
-		/**
-		 * This function inserts line breaks and indents long strings 
-		 * according the  params input. It will only break lines at spaces, 
-		 * commas and pipes.
-		 * \param os - The stream to be printed to.
-		 * \param s - The string to be printed.
-		 * \param maxWidth - The maxWidth allowed for the output line. 
-		 * \param indentSpaces - The number of spaces to indent the first line. 
-		 * \param secondLineOffset - The number of spaces to indent the second
-		 * and all subsequent lines in addition to indentSpaces.
-		 */
-		void spacePrint( std::ostream& os, 
-						 const std::string& s, 
-						 int maxWidth, 
-						 int indentSpaces, 
-						 int secondLineOffset ) const;
 
 };
 
@@ -181,7 +181,7 @@ inline void StdOutput::_shortUsage( CmdLineInterface& _cmd,
 	if ( secondLineOffset > 75/2 )
 			secondLineOffset = static_cast<int>(75/2);
 
-	spacePrint( std::cout, s, 75, 3, secondLineOffset );
+	StdOutput::spacePrint( std::cout, s, 75, 3, secondLineOffset );
 }
 
 inline void StdOutput::_longUsage( CmdLineInterface& _cmd, 
@@ -199,11 +199,11 @@ inline void StdOutput::_longUsage( CmdLineInterface& _cmd,
 			  it != xorList[i].end(); 
 			  it++ )
 		{
-			spacePrint( os, (*it)->longID(), 75, 3, 3 );
-			spacePrint( os, (*it)->getDescription(), 75, 5, 0 );
+			StdOutput::spacePrint( os, (*it)->longID(), 75, 3, 3 );
+			StdOutput::spacePrint( os, (*it)->getDescription(), 75, 5, 0 );
 
 			if ( it+1 != xorList[i].end() )
-				spacePrint(os, "-- OR --", 75, 9, 0);
+				StdOutput::spacePrint(os, "-- OR --", 75, 9, 0);
 		}
 		os << std::endl << std::endl;
 	}
@@ -212,21 +212,21 @@ inline void StdOutput::_longUsage( CmdLineInterface& _cmd,
 	for (ArgListIterator it = argList.begin(); it != argList.end(); it++)
 		if ( !xorHandler.contains( (*it) ) )
 		{
-			spacePrint( os, (*it)->longID(), 75, 3, 3 ); 
-			spacePrint( os, (*it)->getDescription(), 75, 5, 0 ); 
+			StdOutput::spacePrint( os, (*it)->longID(), 75, 3, 3 ); 
+			StdOutput::spacePrint( os, (*it)->getDescription(), 75, 5, 0 ); 
 			os << std::endl;
 		}
 
 	os << std::endl;
 
-	spacePrint( os, message, 75, 3, 0 );
+	StdOutput::spacePrint( os, message, 75, 3, 0 );
 }
 
-inline void StdOutput::spacePrint( std::ostream& os, 
-						           const std::string& s, 
-						           int maxWidth, 
-						           int indentSpaces, 
-						           int secondLineOffset ) const
+inline void StdOutput::spacePrint( std::ostream& os,
+						           const std::string& s,
+						           int maxWidth,
+						           int indentSpaces,
+						           int secondLineOffset )
 {
 	int len = static_cast<int>(s.length());
 

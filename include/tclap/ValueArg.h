@@ -355,6 +355,8 @@ class ValueArg : public Arg
          */
         virtual std::string longID(const std::string& val = "val") const;
 
+		virtual std::set<Arg*>& requires(std::string constrain = "*");
+
 };
 
 
@@ -496,7 +498,7 @@ std::string ValueArg<T>::longID(const std::string& /* val */) const
 }
 
 template<class T>
-void ValueArg<T>::_extractValue( const std::string& val ) 
+void ValueArg<T>::_extractValue( const std::string& val )
 {
 	VALUE_ARG_HELPER::ValueExtractor<T> ve(_value);
 
@@ -517,6 +519,57 @@ void ValueArg<T>::_extractValue( const std::string& val )
 									      "' does not meet constraint: " + 
 										  _constraint->description(),
 										  toString() ) );
+}
+
+template<>
+void ValueArg<std::string>::_extractValue( const std::string& val )
+{
+	VALUE_ARG_HELPER::ValueExtractor<std::string> ve(_value);
+
+	int err = ve.extractValue(val);
+
+	if ( err == VALUE_ARG_HELPER::EXTRACT_FAILURE )
+		throw( ArgParseException("Couldn't read argument value from string '" +
+	                             val + "'", toString() ) );
+
+	if ( err == VALUE_ARG_HELPER::EXTRACT_TOO_MANY )
+		throw( ArgParseException(
+					"More than one valid value parsed from string '" +
+				    val + "'", toString() ) );
+
+	if ( _constraint != NULL )
+	{
+		if ( ! _constraint->check( _value ) )
+		{
+			throw( CmdLineParseException( "Value '" + val +
+									      "' does not meet constraint: " +
+										  _constraint->description(),
+										  toString() ) );
+		} else {
+			if ( _dependencies.find( _value ) != _dependencies.end() )
+			{
+				_dependencies[ "*" ] = _dependencies[ _value ];
+			}
+		}
+	}
+}
+
+template<class T>
+inline std::set<Arg*>& ValueArg<T>::requires(std::string constraint)
+{
+	if ( constraint != "*" ) {
+		throw(SpecificationException("Not implemented yet.", toString()));
+	}
+	return _dependencies["*"];
+}
+
+template<>
+inline std::set<Arg*>& ValueArg<std::string>::requires(std::string constraint)
+{
+	if ( constraint != "*" && _constraint != NULL && !_constraint->check( constraint ) ) {
+		throw(SpecificationException("Argument has no constrains.", toString()));
+	}
+	return _dependencies[constraint];
 }
 
 } // namespace TCLAP

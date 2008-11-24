@@ -28,6 +28,7 @@
 #include <vector>
 #include <list>
 #include <iostream>
+#include <set>
 
 #include <tclap/ArgException.h>
 #include <tclap/Visitor.h>
@@ -126,6 +127,8 @@ class Arg
 		bool _xorSet;
 
 		bool _acceptsMultipleValues;
+
+		std::map< std::string, std::set<Arg*> > _dependencies;
 
 		/**
 		 * Performs the special handling described by the Vistitor.
@@ -334,6 +337,10 @@ class Arg
 		virtual bool allowMore();
 		virtual bool acceptsMultipleValues();
 
+		void requires( Arg& );
+		void requires( std::string constrain, Arg& arg );
+		virtual std::set<Arg*>& requires(std::string constrain = "*");
+		const std::set<Arg*>& requiredArgs();
 };
 
 /**
@@ -394,6 +401,11 @@ inline Arg::Arg(const std::string& flag,
 							Arg::flagStartString() + "' or '" + 
 							Arg::nameStartString() + "' or space.",
 							toString() ) );
+
+	if ( _required )
+	{
+		_dependencies["*"].insert(this);
+	}
 
 }
 
@@ -576,6 +588,28 @@ inline bool Arg::acceptsMultipleValues()
 	return _acceptsMultipleValues;
 }
 
+inline void Arg::requires( Arg& arg )
+{
+	_dependencies["*"].insert(&arg);
+}
+
+inline void Arg::requires( std::string constrain, Arg& arg )
+{
+  _dependencies[constrain].insert(&arg);
+}
+
+inline const std::set<Arg*>& Arg::requiredArgs()
+{
+	return _dependencies["*"];
+}
+
+inline std::set<Arg*>& Arg::requires(std::string constrain)
+{
+	if ( constrain != "*" ) {
+		throw(SpecificationException("Argument has no constrains.", toString()));
+	}
+	return _dependencies[constrain];
+}
 //////////////////////////////////////////////////////////////////////
 //END Arg.cpp
 //////////////////////////////////////////////////////////////////////
