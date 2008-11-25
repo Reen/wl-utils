@@ -1,6 +1,7 @@
 Makefile*
 filter
 phase
+matrix_balance
 matrix_tool
 matrix_tool_test
 *_debug
