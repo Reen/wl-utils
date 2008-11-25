@@ -46,13 +46,9 @@ int main (int argc, char *argv[])
     TCLAP::ValueArg<double> emaxArg("","emax","Maximum energy.",false,20.0,"float", cmd);
     TCLAP::ValueArg<double> volumeArg("","volume","Box volume.",false,125.0,"float", cmd);
     TCLAP::ValueArg<std::string> outArg("o","out","Filename for serialized output.",false,"","filename.gz", cmd);
-    TCLAP::SwitchArg loadArg("l", "load", "If serialized matrix should be read instead of parQ data.", cmd);
     commandArg.requires("convert") += &nminArg, &nmaxArg, &nEnergyArg, &eminArg, &emaxArg, &volumeArg, &outArg;
     commandArg.requires("dos") += &nminArg, &nmaxArg, &nEnergyArg, &eminArg, &emaxArg, &volumeArg;
-    if (!argv_has(argc, argv, "load")) {
-      commandArg.requires("balance") += &nminArg, &nmaxArg, &nEnergyArg, &eminArg, &emaxArg, &volumeArg;
-    }
-
+    
     cmd.parse( argc, argv );
 
     command = commandArg.getValue();
