@@ -26,7 +26,6 @@ namespace io = boost::iostreams;
 int main (int argc, char *argv[])
 {
   std::string file1, file2, command, out_filename;
-  bool load_archive = false;
   try
   {
     using namespace boost::assign;
@@ -63,7 +62,6 @@ int main (int argc, char *argv[])
     s->set_volume(volumeArg.getValue());
 
     out_filename = outArg.getValue();
-    load_archive = loadArg.getValue();
 
     if(command == "convert" && out_filename == "") {
       throw TCLAP::CmdLineParseException("Option --out missing", "command=convert");
