@@ -21,11 +21,27 @@
 
 #include <boost/utility.hpp>
 
+#include "matrix_generics.h"
 #include "zlib.h"
 
 #include "state.h"
 
 namespace io = boost::iostreams;
+
+template<class matrix_t>
+void resize_matrix(matrix_t& matrix,
+                   std::size_t outer_cols,
+                   std::size_t outer_rows,
+                   std::size_t inner_cols,
+                   std::size_t inner_rows) {
+  matrix.resize(outer_cols,outer_rows,1,1);
+  for (int i = 0; i < static_cast<int>(matrix.size1()); ++ i) {
+    for (int j = std::max(i-1, 0); j < std::min(i+2, static_cast<int>(matrix.size2())); ++j) {
+      matrix(i, j).resize(inner_cols,inner_rows);
+      matrix(i, j).clear();
+    }
+  }
+}
 
 template<class matrix_float_t, class calc_float_t = double>
 class QMatrix : boost::noncopyable {
@@ -45,13 +61,7 @@ private:
   template<class U, class V> friend class QMatrix;
 
   void resize() {
-    q_matrix_.resize(outer_cols_,outer_rows_,1,1);
-    for (int i = 0; i < static_cast<int>(q_matrix_.size1()); ++ i) {
-      for (int j = std::max(i-1, 0); j < std::min(i+2, static_cast<int>(q_matrix_.size2())); ++j) {
-        q_matrix_(i, j).resize(inner_cols_,inner_rows_);
-        q_matrix_(i, j).clear();
-      }
-    }
+    resize_matrix(q_matrix_, outer_cols_, outer_rows_, inner_cols_, inner_rows_);
   }
 
   gzFile read_file_(gzFile file, std::size_t N) {
@@ -84,6 +94,40 @@ private:
     } while(--N >  0 && (Z_NULL != gzgets(file, buf, 1000)));
     std::cerr << cc << " " << count << std::endl;
     return file;
+  }
+
+  void print_(const matrix_t& matrix, std::string file = "") const {
+    std::ofstream outfile;
+    std::streambuf*  strm_buffer = std::cout.rdbuf();
+    if(file != "") {
+      outfile.open(file.c_str());
+      std::cout.rdbuf(outfile.rdbuf());
+    }
+    State::lease s;
+    s->print_to_stream(std::cout);
+    std::cout.precision(15);
+    for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
+      int s_ni = int(ni);
+      // minor column
+      for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
+        // major row
+        for (std::size_t nj = std::max(s_ni-1, 0);
+             nj < std::min(ni+2, outer_rows_);
+             ++nj) {
+          // minor row
+          for (std::size_t ej = 0; ej < inner_rows_; ++ej) {
+            if (matrix(ni,nj)(ei,ej) > 0.0) {
+              std::cout << std::setw(15) << std::right << (ni - s->min_particles())
+                        << std::setw(15) << std::right << (nj - s->min_particles())
+                        << std::setw(25) << std::right << (s->bin_to_energy(ei))
+                        << std::setw(25) << std::right << (s->bin_to_energy(ej))
+                        << std::setw(25) << std::right << matrix(ni,nj)(ei,ej) << "\n";
+            }
+          }
+        }
+      }
+    }
+    std::cout.rdbuf(strm_buffer);
   }
 public:
   // constructor
@@ -220,31 +264,10 @@ public:
   }
 
   void print() const {
-    for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
-      int s_ni = int(ni);
-      // minor column
-      for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
-        // major row
-        for (std::size_t nj = std::max(s_ni-1, 0);
-             nj < std::min(ni+2, outer_rows_);
-             ++nj) {
-          // minor row
-          for (std::size_t ej = 0; ej < inner_rows_; ++ej) {
-            if (q_matrix_(ni,nj)(ei,ej) > 0.0) {
-              printf("%lu %lu %lu %lu %f\n",
-                     ni,
-                     nj,
-                     ei,
-                     ej,
-                     q_matrix_(ni,nj)(ei,ej));
-            }
-          }
-        }
-      }
-    }
+    print_(q_matrix_);
   }
 
-  void calculate_dos() {
+  void calculate_dos(std::string dos_fn = "") {
     State::lease s;
     std::size_t nParticles(s->n_particles());
     std::size_t nEnergy(s->n_energy());
@@ -252,9 +275,23 @@ public:
     calc_float_t zero(0), one(1), crit(1.0e-7), dist(0);
     std::size_t i(0);
     dos_matrix_t dos(nParticles,nEnergy);
-  	dos_matrix_t dos_old(nParticles,nEnergy);
-  	std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
-
+    dos_matrix_t dos_old(nParticles,nEnergy);
+    if (dos_fn == "") {
+      std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
+    } else {
+      std::cout << "Reading initial density of states from " << dos_fn << std::endl;
+      State::lease s;
+      io::filtering_istream in;
+      in.push(shell_comments_input_filter());
+      in.push(io::gzip_decompressor());
+      in.push(io::file_source(dos_fn));
+      read_matrix_from_stream<std::size_t, double>(
+          in,
+          dos_old,
+          5,
+          std::bind2nd(std::minus<std::size_t>(),s->min_particles()),
+          value_to_bin<double>(s->min_energy(), s->n_energy()));
+    }
 
     boost::timer t;
     while (true) {
@@ -269,9 +306,10 @@ public:
         {
           for (std::size_t ni = std::max(s_nj-1, 0); ni < std::min(nj+2, outer_cols_); ++ni)
           {
-            boost::numeric::ublas::matrix_column< inner_matrix_t > m1(q_matrix_(ni, nj), ej);
-            boost::numeric::ublas::matrix_row< dos_matrix_t > m2(dos_old, ni);
-            calc_float_t incr(boost::numeric::ublas::inner_prod(m1,m2));
+            calc_float_t incr(boost::numeric::ublas::inner_prod(
+              boost::numeric::ublas::matrix_column< inner_matrix_t >(q_matrix_(ni, nj), ej),
+              boost::numeric::ublas::matrix_row< dos_matrix_t >(dos_old, ni)
+            ));
             //incr = std::inner_product(m1.begin(), m1.end(), m2.begin(), incr);
             dos(nj, ej) += incr;
             n += incr;
@@ -307,7 +345,7 @@ public:
         std::cout << "I: "
                   << std::setw(10) << std::right << i
                   << std::setw(10) << std::right << (t.elapsed()/100.0)
-                  << " seconds/iterations, current dist: " << dist
+                  << " seconds/iterations, current dist: " << (dist-1.0)
                   << std::endl;
         print_dos(dos, i);
         t.restart();
@@ -344,7 +382,7 @@ public:
         if(dos(i,j) > 0.0) {
           double log_dos = log(dos(i,j));
           out << std::setw(20) << std::right << n
-              << std::setw(20) << std::right << j
+              << std::setw(20) << std::right << s->bin_to_energy(j)
               << std::setw(20) << std::right << (log_dos + fakln)
               << std::setw(20) << std::right << log_dos
               << std::setw(20) << std::right << dos(i,j)
@@ -355,7 +393,8 @@ public:
   }
 
   void check_detailed_balance() {
-    matrix_t balance(outer_rows_, inner_rows_);
+    matrix_t balance;
+    resize_matrix(balance, outer_rows_, outer_rows_, inner_rows_, inner_rows_);
     for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
       int s_ni = int(ni);
       // major row
@@ -371,6 +410,7 @@ public:
         }
       }
     }
+    print_(balance, "balance.dat");
   }
 
 private:

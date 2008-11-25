@@ -42,6 +42,10 @@ public:
   void set_n_energy(const std::size_t& n_energy) { n_energy_ = n_energy; set_energy_bin_width(); }
   void set_volume(const double& volume) { volume_ = volume; }
 
+  double bin_to_energy(const std::size_t& bin) {
+    return (bin * energy_bin_width_ - min_energy_);
+  }
+
   void print_to_stream(std::ostream& os) {
     os
     << "# nmin     " << min_particles_    << "\n"
