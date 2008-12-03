@@ -32,7 +32,7 @@ int main (int argc, char *argv[])
 
     TCLAP::CmdLine cmd("q_matrix", ' ', "0.9");
     std::vector<std::string> allowed_commands_vec;
-    allowed_commands_vec += "convert","compare","dos";
+    allowed_commands_vec += "compare","dos";
     TCLAP::ValuesConstraint<std::string> allowed_commands(allowed_commands_vec);
     TCLAP::UnlabeledValueArg<std::string> commandArg("command","Command to be executed",true,"", &allowed_commands, cmd);
     TCLAP::UnlabeledValueArg<std::string> file1Arg("file1","Filename of the first parQ dat file",true,"","filename", cmd);
@@ -45,7 +45,6 @@ int main (int argc, char *argv[])
     TCLAP::ValueArg<double> emaxArg("","emax","Maximum energy.",false,20.0,"float", cmd);
     TCLAP::ValueArg<double> volumeArg("","volume","Box volume.",false,125.0,"float", cmd);
     TCLAP::ValueArg<std::string> outArg("o","out","Filename for serialized output.",false,"","filename.gz", cmd);
-    commandArg.requires("convert") += &nminArg, &nmaxArg, &nEnergyArg, &eminArg, &emaxArg, &volumeArg, &outArg;
     commandArg.requires("dos") += &nminArg, &nmaxArg, &nEnergyArg, &eminArg, &emaxArg, &volumeArg;
     
     cmd.parse( argc, argv );
@@ -63,9 +62,6 @@ int main (int argc, char *argv[])
 
     out_filename = outArg.getValue();
 
-    if(command == "convert" && out_filename == "") {
-      throw TCLAP::CmdLineParseException("Option --out missing", "command=convert");
-    }
   }
   catch (TCLAP::ArgException &e)  // catch any exceptions
   {
@@ -98,25 +94,6 @@ int main (int argc, char *argv[])
     qD1 -= qD2;
 
     qD1.print();
-  } else if (command == "convert") {
-    std::size_t nParticles(State::instance->n_particles());
-    std::size_t nEnergy(State::instance->n_energy());
-    QMatrix<uint32_t> q(nParticles,nParticles,nEnergy,nEnergy);
-    QMatrix<double> qD(nParticles,nParticles,nEnergy,nEnergy);
-
-    std::cerr << "reading " << file1 << std::endl;
-    gzFile parq_file_1 = q.read_file(file1);
-    qD.stochastic_from(q);
-    gzclose(parq_file_1);
-
-    std::cerr << "saving to " << out_filename << std::endl;
-    io::filtering_ostream out;
-    out.push(io::gzip_compressor());
-    out.push(io::file_sink(out_filename));
-    boost::archive::text_oarchive oa(out);
-    State::lease s;
-    s->save_to(oa);
-    oa & qD;
   } else if (command == "dos") {
 
   } else {
