@@ -47,12 +47,16 @@ public:
   void set_volume(const double& volume) { volume_ = volume; }
 
   void set_working_directory(const std::string& working_directory) {
+    if(working_directory == "") { return; }
+
     using namespace boost::filesystem;
     path w_dir(working_directory);
     if(!exists(w_dir) || !is_directory(w_dir)) {
       create_directory(w_dir);
     }
+
     working_directory_ = working_directory;
+
     if(*(working_directory_.rbegin()) != '/') {
       working_directory_ += '/';
     }
