@@ -356,9 +356,11 @@ public:
 
   void print_dos(const dos_matrix_t& dos, std::size_t iteration) const {
     char filename[50];
-    sprintf( filename, "dos.%05lu.dat.gz", iteration);
-
     State::lease s;
+    sprintf(filename, "%sdos.%05lu.dat.gz",
+            s->working_directory().c_str(),
+            iteration);
+
     std::size_t minParticles(s->min_particles());
     std::size_t maxParticles(s->max_particles());
     double minEnergy(s->min_energy());

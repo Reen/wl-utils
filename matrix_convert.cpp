@@ -68,5 +68,6 @@ int main (int argc, char *argv[])
   State::lease s;
   s->save_to(oa);
   oa & qD;
-	return 0;
+  out.pop();
+  return 0;
 }

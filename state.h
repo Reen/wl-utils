@@ -1,6 +1,8 @@
 #ifndef _STATE_H_
 #define _STATE_H_
 
+#include "boost/filesystem.hpp"
+
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/utility/singleton.hpp>
@@ -15,6 +17,7 @@ private:
   double energy_bin_width_;
   std::size_t n_energy_;
   double volume_;
+  std::string working_directory_;
 
   void set_n_particles() {
     n_particles_ = max_particles_ - min_particles_ + 1;
@@ -34,6 +37,7 @@ public:
   const std::size_t& n_energy() const { return n_energy_; }
   const double& energy_bin_width() const { return energy_bin_width_; }
   const double& volume() const { return volume_; }
+  const std::string& working_directory() const { return working_directory_; }
 
   void set_min_particles(const std::size_t& min_particles) { min_particles_ = min_particles; set_n_particles(); }
   void set_max_particles(const std::size_t& max_particles) { max_particles_ = max_particles; set_n_particles(); }
@@ -41,6 +45,18 @@ public:
   void set_max_energy(const double& max_energy) { max_energy_ = max_energy; set_energy_bin_width(); }
   void set_n_energy(const std::size_t& n_energy) { n_energy_ = n_energy; set_energy_bin_width(); }
   void set_volume(const double& volume) { volume_ = volume; }
+
+  void set_working_directory(const std::string& working_directory) {
+    using namespace boost::filesystem;
+    path w_dir(working_directory);
+    if(!exists(w_dir) || !is_directory(w_dir)) {
+      create_directory(w_dir);
+    }
+    working_directory_ = working_directory;
+    if(*(working_directory_.rbegin()) != '/') {
+      working_directory_ += '/';
+    }
+  }
 
   double bin_to_energy(const std::size_t& bin) {
     return (bin * energy_bin_width_ - min_energy_);

@@ -23,14 +23,14 @@ namespace io = boost::iostreams;
 
 int main (int argc, char *argv[])
 {
-  std::string file, initial_dos("");
+  std::string file, initial_dos(""), work_dir("");
   bool load_archive = false;
   try
 	{
 	  using namespace boost::assign;
     TCLAP::CmdLine cmd("Matrix Detailed Balance Calculator", ' ', "0.91");
     TCLAP::UnlabeledValueArg<std::string> fileArg("file","Filename of the parQ dat file or Q matrix archive.",true,"","filename", cmd);
-
+    TCLAP::ValueArg<std::string> workDirArg("w", "work-dir", "Working directory", false, "", "directory", cmd);
     TCLAP::ValueArg<std::size_t> nminArg("","nmin","Minimum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nmaxArg("","nmax","Maximum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nEnergyArg("","nEnergy","Number of Energy bins. = 500",false,500,"int", cmd);
@@ -58,6 +58,7 @@ int main (int argc, char *argv[])
     s->set_n_energy(nEnergyArg.getValue());
     s->set_volume(volumeArg.getValue());
 
+    s->set_working_directory(workDirArg.getValue());
     load_archive = loadArg.getValue();
   }
   catch (TCLAP::ArgException &e)  // catch any exceptions

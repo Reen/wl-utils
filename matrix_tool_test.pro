@@ -3,7 +3,7 @@ include( common.pri )
 HEADERS  = q_matrix.h state.h
 SOURCES  = matrix_tool_test.cpp
 LIBS     = -lz
-BOOST    = -lboost_thread -lboost_serialization -lboost_iostreams -lboost_test_exec_monitor
+BOOST    = -lboost_thread -lboost_serialization -lboost_iostreams -lboost_test_exec_monitor -lboost_filesystem -lboost_system
 
 include( system.pri )
 

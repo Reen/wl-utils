@@ -5,7 +5,7 @@ HEADERS += q_matrix.h
 HEADERS += state.h
 SOURCES  = matrix_balance.cpp
 LIBS     = -lz
-BOOST    = -lboost_thread -lboost_serialization -lboost_iostreams
+BOOST    = -lboost_thread -lboost_serialization -lboost_iostreams -lboost_filesystem -lboost_system
 
 include( system.pri )
 
