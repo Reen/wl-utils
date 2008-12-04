@@ -30,7 +30,7 @@ int main (int argc, char *argv[])
 	  using namespace boost::assign;
     TCLAP::CmdLine cmd("Matrix Detailed Balance Calculator", ' ', "0.91");
     TCLAP::UnlabeledValueArg<std::string> fileArg("file","Filename of the parQ dat file or Q matrix archive.",true,"","filename", cmd);
-    TCLAP::ValueArg<std::string> workDirArg("w", "work-dir", "Working directory", false, "", "directory", cmd);
+    TCLAP::ValueArg<std::string> workDirArg("w", "workdir", "Working directory", false, "", "directory", cmd);
     TCLAP::ValueArg<std::size_t> nminArg("","nmin","Minimum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nmaxArg("","nmax","Maximum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nEnergyArg("","nEnergy","Number of Energy bins. = 500",false,500,"int", cmd);
