@@ -29,6 +29,7 @@
 #include <list>
 #include <iostream>
 #include <set>
+#include <map>
 
 #include <tclap/ArgException.h>
 #include <tclap/Visitor.h>
