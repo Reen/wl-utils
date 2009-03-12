@@ -6,8 +6,6 @@
 #include <sstream>
 #include <limits>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
 #include <boost/assign/std/set.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -73,11 +71,10 @@ int main (int argc, char *argv[])
   if(load_archive) {
     io::filtering_istream in;
     in.push(io::gzip_decompressor());
-    in.push(io::file_source(file));
-    boost::archive::text_iarchive ia(in);
+    in.push(io::file_source(file, std::ios::binary|std::ios::in));
     State::lease s;
-    s->load_from(ia);
-    ia & qD;
+    s->load_from(in);
+    qD.load_from(in);
   } else {
     std::size_t nParticles(State::instance->n_particles());
 		std::size_t nEnergy(State::instance->n_energy());

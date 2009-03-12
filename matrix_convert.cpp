@@ -1,5 +1,3 @@
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
 #include <boost/assign/std/set.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -63,11 +61,11 @@ int main (int argc, char *argv[])
   std::cerr << "saving to " << out_filename << std::endl;
   io::filtering_ostream out;
   out.push(io::gzip_compressor());
-  out.push(io::file_sink(out_filename));
-  boost::archive::text_oarchive oa(out);
+  out.push(io::file_sink(out_filename, std::ios::binary|std::ios::out));
   State::lease s;
-  s->save_to(oa);
-  oa & qD;
+  s->save_to(out);
+  qD.save_to(out);
+  //oa & qD;
   out.pop();
   return 0;
 }

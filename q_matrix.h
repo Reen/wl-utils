@@ -16,9 +16,6 @@
 
 #include <boost/progress.hpp>
 
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/split_member.hpp>
-
 #include <boost/utility.hpp>
 
 #include "matrix_generics.h"
@@ -415,31 +412,28 @@ public:
     print_(balance, "balance.dat");
   }
 
-private:
-  friend class boost::serialization::access;
-
-  template<class Archive>
-  void save(Archive & ar, const unsigned int /* version */) const {
-    ar << outer_cols_;
-    ar << outer_rows_;
-    ar << inner_cols_;
-    ar << inner_rows_;
+  void save_to(io::filtering_ostream &out) {
+    out.write((char*)&outer_cols_, sizeof(outer_cols_));
+    out.write((char*)&outer_rows_, sizeof(outer_rows_));
+    out.write((char*)&inner_cols_, sizeof(inner_cols_));
+    out.write((char*)&inner_rows_, sizeof(inner_rows_));
+    std::cout << outer_cols_ << " " << outer_rows_ << " " << inner_cols_ << " " << inner_rows_ << "\n";
 
     for (int i = 0; i < static_cast<int>(outer_cols_); ++i) {
       for (int j = std::max(i-1, 0);
            j < std::min(i+2, static_cast<int>(outer_rows_));
            ++j) {
-        ar << q_matrix_(i, j);
+        out.write((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(matrix_float_t));
       }
     }
   }
 
-  template<class Archive>
-  void load(Archive & ar, const unsigned int /* version */) {
-    ar >> outer_cols_;
-    ar >> outer_rows_;
-    ar >> inner_cols_;
-    ar >> inner_rows_;
+  void load_from(io::filtering_istream &in) {
+    in.read((char*)&outer_cols_, sizeof(outer_cols_));
+    in.read((char*)&outer_rows_, sizeof(outer_rows_));
+    in.read((char*)&inner_cols_, sizeof(inner_cols_));
+    in.read((char*)&inner_rows_, sizeof(inner_rows_));
+    std::cout << outer_cols_ << " " << outer_rows_ << " " << inner_cols_ << " " << inner_rows_ << "\n";
 
     resize();
 
@@ -447,14 +441,10 @@ private:
       for (int j = std::max(i-1, 0);
            j < std::min(i+2, static_cast<int>(outer_rows_));
            ++j) {
-        ar >> q_matrix_(i, j);
+        in.read((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(matrix_float_t));
       }
     }
   }
-
-public:
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
-
 };
 
 #endif /* _Q_MATRIX_H_ */

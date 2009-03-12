@@ -7,6 +7,10 @@
 #include <boost/serialization/split_member.hpp>
 #include <boost/utility/singleton.hpp>
 
+#include <boost/iostreams/filtering_stream.hpp>
+
+namespace io = boost::iostreams;
+
 class State : public boost::singleton<State> {
 private:
   std::size_t min_particles_;
@@ -78,44 +82,26 @@ public:
     << "# volume   " << volume_           << "\n";
   }
 
-private:
-  friend class boost::serialization::access;
-
-  template<class Archive>
-  void save(Archive &ar, const unsigned int /* version */) const {
-    ar << min_particles_;
-    ar << max_particles_;
-    ar << n_particles_;
-    ar << min_energy_;
-    ar << max_energy_;
-    ar << energy_bin_width_;
-    ar << n_energy_;
-    ar << volume_;
+  void save_to(io::filtering_ostream &out) {
+    out.write((char*)&min_particles_,sizeof(min_particles_));
+    out.write((char*)&max_particles_,sizeof(max_particles_));
+    out.write((char*)&n_particles_,sizeof(n_particles_));
+    out.write((char*)&min_energy_,sizeof(min_energy_));
+    out.write((char*)&max_energy_,sizeof(max_energy_));
+    out.write((char*)&energy_bin_width_,sizeof(energy_bin_width_));
+    out.write((char*)&n_energy_,sizeof(n_energy_));
+    out.write((char*)&volume_,sizeof(volume_));
   }
 
-  template<class Archive>
-  void load(Archive &ar, const unsigned int /* version */) {
-    ar >> min_particles_;
-    ar >> max_particles_;
-    ar >> n_particles_;
-    ar >> min_energy_;
-    ar >> max_energy_;
-    ar >> energy_bin_width_;
-    ar >> n_energy_;
-    ar >> volume_;
-  }
-
-public:
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
-
-  template<class Archive>
-  void save_to(Archive &ar) {
-    ar & (*this);
-  }
-
-  template<class Archive>
-  void load_from(Archive &ar) {
-    ar & (*this);
+  void load_from(io::filtering_istream &in) {
+    in.read((char*)&min_particles_,sizeof(min_particles_));
+    in.read((char*)&max_particles_,sizeof(max_particles_));
+    in.read((char*)&n_particles_,sizeof(n_particles_));
+    in.read((char*)&min_energy_,sizeof(min_energy_));
+    in.read((char*)&max_energy_,sizeof(max_energy_));
+    in.read((char*)&energy_bin_width_,sizeof(energy_bin_width_));
+    in.read((char*)&n_energy_,sizeof(n_energy_));
+    in.read((char*)&volume_,sizeof(volume_));
   }
 };
 

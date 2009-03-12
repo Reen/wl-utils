@@ -2,9 +2,6 @@
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -50,9 +47,8 @@ BOOST_AUTO_TEST_CASE( serialization_test )
     // writing test
     io::filtering_ostream out;
     out.push(io::gzip_compressor());
-    out.push(io::file_sink(filename));
-    boost::archive::text_oarchive oa(out);
-    oa & qD1;
+    out.push(io::file_sink(filename, std::ios::binary|std::ios::out));
+    qD1.save_to(out);
   }
   
   QMatrix<double> qD2;
@@ -60,10 +56,8 @@ BOOST_AUTO_TEST_CASE( serialization_test )
     // reading test
     io::filtering_istream in;
     in.push(io::gzip_decompressor());
-    in.push(io::file_source(filename));
-    boost::archive::text_iarchive ia(in);
-    
-    ia & qD2;
+    in.push(io::file_source(filename, std::ios::binary|std::ios::in));
+    qD2.load_from(in);
   }
   BOOST_CHECK( qD1 == qD2 );
 
