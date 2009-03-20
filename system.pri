@@ -1,7 +1,7 @@
-macx {
+macx-g++ {
 	INCLUDEPATH += /Users/rene/usr/include
 	LIBS        += -L/Users/rene/usr/lib
-	BOOST       ~= s/-l([a-z_]+)/-l\1-xgcc43-mt/g
+	BOOST       ~= s/-l([a-z_]+)/-l\1-xgcc40-mt/g
 }
 
 linux-g++-64 {
