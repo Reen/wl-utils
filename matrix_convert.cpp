@@ -1,3 +1,5 @@
+#include <limits>
+
 #include <boost/assign/std/set.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -15,6 +17,7 @@ namespace io = boost::iostreams;
 int main (int argc, char *argv[])
 {
   std::string file, out_filename;
+  std::size_t skip, read;
   try
   {
     using namespace boost::assign;
@@ -27,6 +30,8 @@ int main (int argc, char *argv[])
     TCLAP::ValueArg<double> emaxArg("","emax","Maximum energy.",false,20.0,"float", cmd);
     TCLAP::ValueArg<double> volumeArg("","volume","Box volume.",false,125.0,"float", cmd);
     TCLAP::ValueArg<std::string> outArg("o","out","Filename for serialized output.",false,"","filename.gz", cmd);
+    TCLAP::ValueArg<std::size_t> skipArg("", "skip", "Lines to skip.", false, 0, "int", cmd);
+    TCLAP::ValueArg<std::size_t> readArg("", "read", "Lines to read.", false, std::numeric_limits<std::size_t>::max(), "int", cmd);
     fileArg.requires() += &nminArg, &nmaxArg, &nEnergyArg, &eminArg, &emaxArg, &volumeArg, &outArg;
 
     cmd.parse( argc, argv );
@@ -41,6 +46,8 @@ int main (int argc, char *argv[])
     s->set_volume(volumeArg.getValue());
 
     out_filename = outArg.getValue();
+    skip = skipArg.getValue();
+    read = readArg.getValue();
   }
   catch (TCLAP::ArgException &e)  // catch any exceptions
   {
@@ -54,7 +61,7 @@ int main (int argc, char *argv[])
   QMatrix<double> qD(nParticles,nParticles,nEnergy,nEnergy);
 
   std::cerr << "reading " << file << std::endl;
-  gzFile parq_file_1 = q.read_file(file);
+  gzFile parq_file_1 = q.read_file(file, skip, read);
   qD.stochastic_from(q);
   gzclose(parq_file_1);
 

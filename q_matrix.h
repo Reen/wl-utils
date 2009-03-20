@@ -61,7 +61,7 @@ private:
     resize_matrix(q_matrix_, outer_cols_, outer_rows_, inner_cols_, inner_rows_);
   }
 
-  gzFile read_file_(gzFile file, std::size_t N) {
+  gzFile read_file_(gzFile file, std::size_t N, std::size_t Nskip) {
     State::lease s;
     std::size_t minParticles(s->min_particles());
     double minEnergy(s->min_energy()), energyBinWidth(s->energy_bin_width());
@@ -72,6 +72,9 @@ private:
     while ((Z_NULL != gzgets(file, buf, 1000)) && buf[0] == '#') {
       // skip comment lines
       std::cerr << buf;
+    }
+    while ((Z_NULL != gzgets(file, buf, 1000)) && --Nskip > 0) {
+      // skip lines
     }
     std::size_t count(0);
     do {
@@ -152,14 +155,16 @@ public:
   }
 
   gzFile read_file(const std::string &filename,
-                   std::size_t N = std::numeric_limits<std::size_t>::max()) {
+                   std::size_t N = std::numeric_limits<std::size_t>::max(),
+                   std::size_t Nskip = 0) {
     gzFile file = gzopen(filename.c_str(), "r");
-    return read_file_(file,N);
+    return read_file_(file, N, Nskip);
   }
 
   gzFile read_file(gzFile file,
-                   std::size_t N = std::numeric_limits<std::size_t>::max()) {
-    return read_file_(file,N);
+                   std::size_t N = std::numeric_limits<std::size_t>::max(),
+                   std::size_t Nskip = 0) {
+    return read_file_(file, N, Nskip);
   }
 
   void stochastic_from(const QMatrix<uint32_t> &mat) {
