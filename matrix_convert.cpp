@@ -61,7 +61,7 @@ int main (int argc, char *argv[])
   QMatrix<double> qD(nParticles,nParticles,nEnergy,nEnergy);
 
   std::cerr << "reading " << file << std::endl;
-  gzFile parq_file_1 = q.read_file(file, skip, read);
+  gzFile parq_file_1 = q.read_file(file, read, skip);
   qD.stochastic_from(q);
   gzclose(parq_file_1);
 

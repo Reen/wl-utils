@@ -78,6 +78,7 @@ private:
       // skip lines
       ++show_progress;
     }
+    ++show_progress;
     std::size_t count(0);
     do {
       count++;
