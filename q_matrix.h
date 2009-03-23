@@ -73,8 +73,10 @@ private:
       // skip comment lines
       std::cerr << buf;
     }
+    boost::progress_display show_progress(Nskip, std::cout, "Skipping...\n");
     while ((Z_NULL != gzgets(file, buf, 1000)) && --Nskip > 0) {
       // skip lines
+      ++show_progress;
     }
     std::size_t count(0);
     do {
