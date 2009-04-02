@@ -1,6 +1,142 @@
 #ifndef _Q_MATRIX_H_
 #define _Q_MATRIX_H_
 
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/device/file_descriptor.hpp>
+//#include <boost/iostreams/filter/bzip2.hpp>
+namespace io = boost::iostreams;
+
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/banded.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+
+template<class matrix_float_t, class calc_float_t = double>
+class QMatrix : boost::noncopyable {
+public:
+  typedef boost::numeric::ublas::matrix< matrix_float_t, boost::numeric::ublas::column_major > inner_matrix_t;
+  typedef boost::numeric::ublas::banded_matrix< inner_matrix_t, boost::numeric::ublas::column_major > matrix_t;
+  typedef boost::numeric::ublas::matrix< calc_float_t, boost::numeric::ublas::row_major > dos_matrix_t;
+private:
+  matrix_t q_matrix_;
+  dos_matrix_t dos_matrix_;
+  std::size_t outer_cols_;
+  std::size_t outer_rows_;
+  std::size_t inner_cols_;
+  std::size_t inner_rows_;
+
+  void resize() {
+    q_matrix_.resize(outer_cols_,outer_rows_,1,1);
+    for (int i = 0; i < static_cast<int>(q_matrix_.size1()); ++i) {
+      for (int j = std::max(i-1, 0); j < std::min(i+2, static_cast<int>(q_matrix_.size2())); ++j) {
+        q_matrix_(i, j).resize(inner_cols_,inner_rows_);
+        q_matrix_(i, j).clear();
+      }
+    }
+  }
+
+public:
+  // constructor
+  QMatrix(std::size_t n1,
+          std::size_t n2,
+          std::size_t n3,
+          std::size_t n4) {
+    resize(n1, n2, n3, n4);
+  }
+
+  QMatrix()
+      : outer_cols_(0),
+        outer_rows_(0),
+        inner_cols_(0),
+        inner_rows_(0) {
+    resize();
+  }
+
+  const std::size_t& outer_cols() const {
+    return outer_cols_;
+  }
+
+  const std::size_t& outer_rows() const {
+    return outer_rows_;
+  }
+  const std::size_t& inner_cols() const {
+    return inner_cols_;
+  }
+  const std::size_t& inner_rows() const {
+    return inner_rows_;
+  }
+
+  void resize(std::size_t n1, std::size_t n2, std::size_t n3, std::size_t n4) {
+    outer_cols_ = n1;
+    outer_rows_ = n2;
+    inner_cols_ = n3;
+    inner_rows_ = n4;
+    resize();
+  }
+  
+  void clear() {
+    for (int i = 0; i < static_cast<int>(outer_cols_); ++ i) {
+      for (int j = std::max(i-1, 0);
+           j < std::min(i+2, static_cast<int>(outer_rows_));
+           ++j) {
+        q_matrix_(i, j).clear();
+      }
+    }
+  }
+
+  const inner_matrix_t& operator()(const std::size_t &i,
+                                   const std::size_t &j) const {
+    return q_matrix_(i,j);
+  }
+
+  inner_matrix_t& operator()(const std::size_t &i,
+                             const std::size_t &j) {
+    assert(0 <= i);
+    assert(0 <= j);
+    assert(i < outer_rows_);
+    assert(j < outer_cols_);
+    return q_matrix_(i,j);
+  }
+  
+  void save_to(io::filtering_ostream &out) {
+    out.write((char*)&outer_cols_, sizeof(outer_cols_));
+    out.write((char*)&outer_rows_, sizeof(outer_rows_));
+    out.write((char*)&inner_cols_, sizeof(inner_cols_));
+    out.write((char*)&inner_rows_, sizeof(inner_rows_));
+    std::cout << outer_cols_ << " " << outer_rows_ << " " << inner_cols_ << " " << inner_rows_ << "\n";
+
+    for (int i = 0; i < static_cast<int>(outer_cols_); ++i) {
+      for (int j = std::max(i-1, 0);
+           j < std::min(i+2, static_cast<int>(outer_rows_));
+           ++j) {
+        out.write((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(matrix_float_t));
+      }
+    }
+  }
+
+  void load_from(io::filtering_istream &in) {
+    in.read((char*)&outer_cols_, sizeof(outer_cols_));
+    in.read((char*)&outer_rows_, sizeof(outer_rows_));
+    in.read((char*)&inner_cols_, sizeof(inner_cols_));
+    in.read((char*)&inner_rows_, sizeof(inner_rows_));
+    std::cout << outer_cols_ << " " << outer_rows_ << " " << inner_cols_ << " " << inner_rows_ << "\n";
+
+    resize();
+
+    for (int i = 0; i < static_cast<int>(outer_cols_); ++i) {
+      for (int j = std::max(i-1, 0);
+           j < std::min(i+2, static_cast<int>(outer_rows_));
+           ++j) {
+        in.read((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(matrix_float_t));
+      }
+    }
+  }
+};
+
+/*
 #include <iomanip>
 
 #include <boost/numeric/ublas/vector.hpp>
@@ -78,7 +214,6 @@ private:
       // skip lines
       ++show_progress;
     }
-    ++show_progress;
     std::size_t count(0);
     do {
       count++;
@@ -454,5 +589,5 @@ public:
     }
   }
 };
-
+*/
 #endif /* _Q_MATRIX_H_ */
