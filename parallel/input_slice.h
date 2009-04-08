@@ -41,7 +41,7 @@ public:
   std::size_t count_newline() {
     std::size_t count(0);
     for (char* p = begin(); p != end(); ++p) {
-      if(*p == '\n') count++
+      if(*p == '\n') count++;
     }
     return count;
   }
