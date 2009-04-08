@@ -37,6 +37,14 @@ public:
   }
   //! Set end to given value.
   void set_end( char* p ) {logical_end=p;}
+  //! count the number of lines
+  std::size_t count_newline() {
+    std::size_t count(0);
+    for (char* p = begin(); p != end(); ++p) {
+      if(*p == '\n') count++
+    }
+    return count;
+  }
 };
 
 
