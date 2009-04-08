@@ -2,15 +2,15 @@
 #include "parallel/input_slice.h"
 #include "state.h"
 
-ParQTransformFilter::ParQTransformFilter(QMatrix<uint32_t> &qm,
+ParQTransformFilter::ParQTransformFilter(int_q_matrix_t &qm,
                                          spin_mutex_matrix &qmut)
     : tbb::filter(false),
       q_matrix_(qm),
       q_mutex_(qmut),
-      outer_cols_(qm.outer_cols()),
-      outer_rows_(qm.outer_rows()),
-      inner_cols_(qm.inner_cols()),
-      inner_rows_(qm.inner_rows()) {
+      outer_cols_(qm.size1()),
+      outer_rows_(qm.size2()),
+      inner_cols_(qm(0,0).size1()),
+      inner_rows_(qm(0,0).size2()) {
   State::lease s;
   minParticles = s->min_particles();
   minEnergy = s->min_energy();

@@ -11,6 +11,10 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include "q_matrix_balance_interface.h"
+#include "q_matrix_convert_interface.h"
+
+
 namespace io = boost::iostreams;
 
 
@@ -18,14 +22,15 @@ namespace io = boost::iostreams;
 
 #include "q_matrix.h"
 #include "state.h"
+#include "matrix_generics.h"
 
 int main (int argc, char *argv[])
 {
   std::string file, initial_dos(""), work_dir("");
   bool load_archive = false;
   try
-	{
-	  using namespace boost::assign;
+  {
+    using namespace boost::assign;
     TCLAP::CmdLine cmd("Matrix Detailed Balance Calculator", ' ', "0.91");
     TCLAP::UnlabeledValueArg<std::string> fileArg("file","Filename of the parQ dat file or Q matrix archive.",true,"","filename", cmd);
     TCLAP::ValueArg<std::string> workDirArg("w", "workdir", "Working directory", false, "", "directory", cmd);
@@ -36,7 +41,7 @@ int main (int argc, char *argv[])
     TCLAP::ValueArg<double> emaxArg("","emax","Maximum energy.",false,20.0,"float", cmd);
     TCLAP::ValueArg<double> volumeArg("","volume","Box volume.",false,125.0,"float", cmd);
 
-    TCLAP::SwitchArg loadArg("l", "load", "If serialized matrix should be read instead of parQ data.", cmd);
+    TCLAP::SwitchArg loadArg("", "load", "If serialized matrix should be read instead of parQ data.", cmd);
     
     TCLAP::ValueArg<std::string> initialDosArg("","initial_dos", "Starting value of the power iteration.", false, "", "filename", cmd);
 
@@ -65,26 +70,30 @@ int main (int argc, char *argv[])
     return -1;
   }
 
-  QMatrix<uint32_t> q;
-	QMatrix<double> qD;
-	std::cerr << "reading " << file << std::endl;
+
+  QMatrix<double> qD_m;
+  std::cerr << "reading " << file << std::endl;
   if(load_archive) {
     io::filtering_istream in;
     in.push(io::gzip_decompressor());
     in.push(io::file_source(file, std::ios::binary|std::ios::in));
     State::lease s;
     s->load_from(in);
-    qD.load_from(in);
+    qD_m.load_from(in);
   } else {
+    QMatrix<uint32_t> q_m;
+    QMatrixConvertInterface< QMatrix<uint32_t> > q(q_m);
+    QMatrixConvertInterface< QMatrix<double> > qD(qD_m);
     std::size_t nParticles(State::instance->n_particles());
-		std::size_t nEnergy(State::instance->n_energy());
-    q.resize(nParticles,nParticles,nEnergy,nEnergy);
-		qD.resize(nParticles,nParticles,nEnergy,nEnergy);
-		gzFile parq_file_1 = q.read_file(file);
-		qD.stochastic_from(q);
+    std::size_t nEnergy(State::instance->n_energy());
+    q_m.resize(nParticles,nParticles,nEnergy,nEnergy);
+    qD_m.resize(nParticles,nParticles,nEnergy,nEnergy);
+    gzFile parq_file_1 = q.read_file(file);
+    qD.stochastic_from(q_m);
     gzclose(parq_file_1);
   }
-	std::cerr << "calculating" << std::endl;
+  QMatrixBalanceInterface< QMatrix<double> > qD(qD_m);
+  std::cerr << "calculating" << std::endl;
   qD.calculate_dos(initial_dos);
   std::cerr << "checking detailed balance" << std::endl;
   qD.check_detailed_balance();

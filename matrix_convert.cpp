@@ -50,14 +50,13 @@ int main (int argc, char *argv[])
 
   std::size_t nParticles(State::instance->n_particles());
   std::size_t nEnergy(State::instance->n_energy());
-  QMatrix<uint32_t> q_m(nParticles,nParticles,nEnergy,nEnergy);
+/*  QMatrix<uint32_t> q_m(nParticles,nParticles,nEnergy,nEnergy);
   QMatrix<double> qD_m(nParticles,nParticles,nEnergy,nEnergy);
-  QMatrixConvertInterface< QMatrix<uint32_t> > q(q_m);
-  QMatrixConvertInterface< QMatrix<double> > qD(qD_m);
+  QMatrixConvertInterface< QMatrix<uint32_t> > q(q_m);*/
+  QMatrixConvertInterface qD(nParticles,nParticles,nEnergy,nEnergy);
 
   std::cerr << "reading " << file << std::endl;
-  gzFile parq_file_1 = q.read_file(file, read, skip);
-  //qD.stochastic_from(q);
+  gzFile parq_file_1 = qD.read_file(file, read, skip);
   gzclose(parq_file_1);
 
   std::cerr << "saving to " << out_filename << std::endl;
@@ -66,7 +65,7 @@ int main (int argc, char *argv[])
   out.push(io::file_sink(out_filename, std::ios::binary|std::ios::out));
   State::lease s;
   s->save_to(out);
-  qD_m.save_to(out);
+  qD.save_to(out);
   out.pop();
   return 0;
 }

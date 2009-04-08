@@ -14,13 +14,25 @@ namespace io = boost::iostreams;
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 
-template<class matrix_float_t, class calc_float_t = double>
+template<class T>
+void resize_matrix(T& matrix,
+              std::size_t outer_cols_, std::size_t outer_rows_,
+              std::size_t inner_cols_, std::size_t inner_rows_) {
+  matrix.resize(outer_cols_,outer_rows_,1,1);
+  for (int i = 0; i < static_cast<int>(matrix.size1()); ++i) {
+    for (int j = std::max(i-1, 0); j < std::min(i+2, static_cast<int>(matrix.size2())); ++j) {
+      matrix(i, j).resize(inner_cols_,inner_rows_);
+      matrix(i, j).clear();
+    }
+  }
+}
+
 class QMatrix : boost::noncopyable {
 public:
-  typedef boost::numeric::ublas::matrix< matrix_float_t, boost::numeric::ublas::column_major > inner_matrix_t;
+  typedef boost::numeric::ublas::matrix< double, boost::numeric::ublas::column_major > inner_matrix_t;
   typedef boost::numeric::ublas::banded_matrix< inner_matrix_t, boost::numeric::ublas::column_major > matrix_t;
-  typedef boost::numeric::ublas::matrix< calc_float_t, boost::numeric::ublas::row_major > dos_matrix_t;
-private:
+  typedef boost::numeric::ublas::matrix< double, boost::numeric::ublas::row_major > dos_matrix_t;
+protected:
   matrix_t q_matrix_;
   dos_matrix_t dos_matrix_;
   std::size_t outer_cols_;
@@ -29,13 +41,8 @@ private:
   std::size_t inner_rows_;
 
   void resize() {
-    q_matrix_.resize(outer_cols_,outer_rows_,1,1);
-    for (int i = 0; i < static_cast<int>(q_matrix_.size1()); ++i) {
-      for (int j = std::max(i-1, 0); j < std::min(i+2, static_cast<int>(q_matrix_.size2())); ++j) {
-        q_matrix_(i, j).resize(inner_cols_,inner_rows_);
-        q_matrix_(i, j).clear();
-      }
-    }
+    resize_matrix(q_matrix_,
+                  outer_cols_, outer_rows_, inner_cols_, inner_rows_);
   }
 
 public:
@@ -112,7 +119,7 @@ public:
       for (int j = std::max(i-1, 0);
            j < std::min(i+2, static_cast<int>(outer_rows_));
            ++j) {
-        out.write((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(matrix_float_t));
+        out.write((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(double));
       }
     }
   }
@@ -130,7 +137,7 @@ public:
       for (int j = std::max(i-1, 0);
            j < std::min(i+2, static_cast<int>(outer_rows_));
            ++j) {
-        in.read((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(matrix_float_t));
+        in.read((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(double));
       }
     }
   }

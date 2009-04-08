@@ -2,7 +2,7 @@
 #define Q_MATRIX_INTERFACE_H_6ASF7Z11
 
 #include <boost/utility.hpp>
-
+#include "q_matrix.h"
 template<class q_matrix_t>
 class QMatrixInterface : boost::noncopyable {
 public:
