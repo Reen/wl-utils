@@ -13,6 +13,8 @@ private:
   gzFile file_;
   std::size_t N_;
   std::size_t N_read_;
+  std::size_t N_to_read_;
+  std::size_t N_last_read_;
   InputSlice *next_slice;
   void* operator()(void*);
 };

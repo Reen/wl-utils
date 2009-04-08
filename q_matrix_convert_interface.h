@@ -58,8 +58,9 @@ private:
     void operator()(const tbb::blocked_range<std::size_t>& r) const {
       int_q_matrix_t& int_m(*int_m_);
       matrix_t& float_m(*float_m_);
-      for (std::size_t ni = r.begin(); ni != r.end(); + +ni) {
+      for (std::size_t ni = r.begin(); ni != r.end(); ++ni) {
         int s_ni = int(ni);
+        std::cout << s_ni << std::endl;
         // minor column
         for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
           std::size_t i_sum(0);
@@ -123,9 +124,9 @@ private:
     pipeline.add_filter(transform_filter);
     std::cout << tbb::task_scheduler_init::automatic << std::endl;
     //pipeline.run(tbb::task_scheduler_init::automatic);
-    pipeline.run(4);
+    pipeline.run(8);
     pipeline.clear();
-
+    std::cout << "finnished processing pipeline" << std::endl;
     // create the stochastic matrix from the integer matrix
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0,outer_cols_),
                       TransformToStochastic(matrix, q_matrix_,
