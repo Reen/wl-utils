@@ -7,10 +7,12 @@
 
 class GzipReader : public tbb::filter {
 public:
-  GzipReader(gzFile file);
+  GzipReader(gzFile file, std::size_t N);
   ~GzipReader();
 private:
   gzFile file_;
+  std::size_t N_;
+  std::size_t N_read_;
   InputSlice *next_slice;
   void* operator()(void*);
 };

@@ -117,7 +117,7 @@ private:
 
     // create a processing pipeline
     tbb::pipeline pipeline;
-    GzipReader input_filter(file);
+    GzipReader input_filter(file, N);
     pipeline.add_filter(input_filter);
     ParQTransformFilter transform_filter(matrix, q_mutex_);
     pipeline.add_filter(transform_filter);
