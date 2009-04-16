@@ -17,7 +17,7 @@ void* GzipReader::operator()(void*) {
     return 0;
   }
   size_t N_by_line = (N_to_read_ < N_last_read_ ? N_to_read_ : 1);
-  // N_by_line is 1 if have not reached the end yet
+  // N_by_line is 1 if we have not reached the end yet
   if (N_by_line == 1) {
     size_t n_avail = next_slice->avail();
     int n_read  = gzread(file_, next_slice->end(), n_avail-1000);

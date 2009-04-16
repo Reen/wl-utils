@@ -71,7 +71,7 @@ int main (int argc, char *argv[])
   }
 
 
-  QMatrix<double> qD_m;
+  QMatrixBalanceInterface qD;
   std::cerr << "reading " << file << std::endl;
   if(load_archive) {
     io::filtering_istream in;
@@ -79,20 +79,16 @@ int main (int argc, char *argv[])
     in.push(io::file_source(file, std::ios::binary|std::ios::in));
     State::lease s;
     s->load_from(in);
-    qD_m.load_from(in);
-  } else {
-    QMatrix<uint32_t> q_m;
-    QMatrixConvertInterface< QMatrix<uint32_t> > q(q_m);
-    QMatrixConvertInterface< QMatrix<double> > qD(qD_m);
+    qD.load_from(in);
+  }/* else {
+    QMatrixConvertInterface qD;
     std::size_t nParticles(State::instance->n_particles());
     std::size_t nEnergy(State::instance->n_energy());
-    q_m.resize(nParticles,nParticles,nEnergy,nEnergy);
-    qD_m.resize(nParticles,nParticles,nEnergy,nEnergy);
-    gzFile parq_file_1 = q.read_file(file);
-    qD.stochastic_from(q_m);
+    qD.resize(nParticles,nParticles,nEnergy,nEnergy);
+    gzFile parq_file_1 = qD.read_file(file);
     gzclose(parq_file_1);
   }
-  QMatrixBalanceInterface< QMatrix<double> > qD(qD_m);
+  QMatrixBalanceInterface< QMatrix<double> > qD(qD_m);*/
   std::cerr << "calculating" << std::endl;
   qD.calculate_dos(initial_dos);
   std::cerr << "checking detailed balance" << std::endl;
