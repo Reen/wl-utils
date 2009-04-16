@@ -9,7 +9,7 @@
 
 #include "tbb/task_scheduler_init.h"
 #include "tbb/blocked_range.h"
-#include "tbb/parallel_for.h"
+#include "tbb/parallel_reduce.h"
 
 class QMatrixBalanceInterface : public QMatrix {
   void print_(const matrix_t& matrix, std::string file = "") const {
@@ -49,6 +49,64 @@ public:
   QMatrixBalanceInterface()
       : QMatrix() {}
 
+  // Class to use with tbb::parallel_reduce
+  class ParQMatrixMultiplication {
+    matrix_t * float_m_;
+//    dos_matrix_t * dos_m_;
+    dos_matrix_t * dos_old_m_;
+    std::size_t outer_cols_;
+    std::size_t outer_rows_;
+    std::size_t inner_cols_;
+    std::size_t inner_rows_;
+  public:
+    double n_gesamt;
+    dos_matrix_t dos;
+    ParQMatrixMultiplication(matrix_t& float_m,
+                             dos_matrix_t& dos_old_m,
+                             std::size_t outer_cols,
+                             std::size_t outer_rows,
+                             std::size_t inner_cols,
+                             std::size_t inner_rows)
+        : float_m_(&float_m), dos_old_m_(&dos_old_m), 
+          outer_cols_(outer_cols), outer_rows_(outer_rows),
+          inner_cols_(inner_cols), inner_rows_(inner_rows),
+          n_gesamt(0) {}
+
+    ParQMatrixMultiplication(ParQMatrixMultiplication& x, tbb::split)
+        : float_m_(x.float_m_), dos_old_m_(x.dos_old_m_),
+          outer_cols_(x.outer_cols_), outer_rows_(x.outer_rows_),
+          inner_cols_(x.inner_cols_), inner_rows_(x.inner_rows_),
+          n_gesamt(0) {}
+
+    void join(const ParQMatrixMultiplication& y) {
+      n_gesamt += y.n_gesamt;
+      dos += y.dos;
+    }
+
+    void operator()(const tbb::blocked_range<std::size_t>& r)  {
+      matrix_t& float_m(*float_m_);
+      //dos_matrix_t& dos(*dos_m_);
+      dos_matrix_t& dos_old(*dos_old_m_);
+      double n = n_gesamt;
+      for (std::size_t nj = r.begin(); nj != r.end(); ++nj) {
+        int s_nj = int(nj);
+        for (std::size_t ej = 0; ej < inner_rows_; ++ej)
+        {
+          for (std::size_t ni = std::max(s_nj-1, 0); ni < std::min(nj+2, outer_cols_); ++ni)
+          {
+            double incr(boost::numeric::ublas::inner_prod(
+              boost::numeric::ublas::matrix_column< inner_matrix_t >(float_m(ni, nj), ej),
+              boost::numeric::ublas::matrix_row< dos_matrix_t >(dos_old, ni)
+            ));
+            dos(nj, ej) += incr;
+            n += incr;
+          }
+        }
+      }
+      n_gesamt = n;
+    }
+  };
+
   void calculate_dos(std::string dos_fn = "") {
     State::lease s;
     std::size_t nParticles(s->n_particles());
@@ -81,7 +139,7 @@ public:
       dos.clear();
       // do the matrix-vector-multiplication
       double n(0);
-      for (std::size_t nj = 0; nj < outer_rows_; ++nj)
+      /*for (std::size_t nj = 0; nj < outer_rows_; ++nj)
       {
         int s_nj = int(nj);
         for (std::size_t ej = 0; ej < inner_rows_; ++ej)
@@ -98,7 +156,14 @@ public:
           }
           //std::cout << std::endl;
         }
-      }
+      }*/
+      ParQMatrixMultiplication pqmm(q_matrix_, dos_old, outer_cols_,
+                                    outer_rows_, inner_cols_,
+                                    inner_rows_);
+      tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0,outer_rows_),
+                           pqmm, tbb::auto_partitioner());
+      n = pqmm.n_gesamt;
+      dos = pqmm.dos;
       // check wether the iteration has converged
       bool converged = true;
       for (dos_matrix_t::array_type::iterator

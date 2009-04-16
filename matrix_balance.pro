@@ -3,8 +3,9 @@ include( common.pri )
 HEADERS  = matrix_generics.h
 HEADERS += q_matrix.h
 HEADERS += state.h
+HEADERS += q_matrix_balance_interface.h
 SOURCES  = matrix_balance.cpp
-LIBS     = -lz
+LIBS     = -lz -ltbb
 BOOST    = -lboost_thread -lboost_serialization -lboost_iostreams -lboost_filesystem -lboost_system
 
 include( system.pri )

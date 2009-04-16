@@ -2,7 +2,6 @@ include( common.pri )
 
 HEADERS  = matrix_generics.h
 HEADERS += q_matrix.h
-HEADERS += q_matrix_interface.h
 HEADERS += q_matrix_convert_interface.h
 HEADERS += parallel/gzip_reader.h
 HEADERS += parallel/input_slice.h
