@@ -70,13 +70,13 @@ public:
         : float_m_(&float_m), dos_old_m_(&dos_old_m), 
           outer_cols_(outer_cols), outer_rows_(outer_rows),
           inner_cols_(inner_cols), inner_rows_(inner_rows),
-          n_gesamt(0) {}
+          n_gesamt(0), dos(outer_rows,inner_rows) {}
 
     ParQMatrixMultiplication(ParQMatrixMultiplication& x, tbb::split)
         : float_m_(x.float_m_), dos_old_m_(x.dos_old_m_),
           outer_cols_(x.outer_cols_), outer_rows_(x.outer_rows_),
           inner_cols_(x.inner_cols_), inner_rows_(x.inner_rows_),
-          n_gesamt(0) {}
+          n_gesamt(0), dos(x.outer_rows_,x.inner_rows_) {}
 
     void join(const ParQMatrixMultiplication& y) {
       n_gesamt += y.n_gesamt;
