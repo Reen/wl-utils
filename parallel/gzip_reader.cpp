@@ -1,10 +1,12 @@
 #include "parallel/gzip_reader.h"
 #include <iostream>
 
+#define BYTES_TO_READ 100000000
+
 GzipReader::GzipReader(gzFile file, std::size_t N)
     : filter(true),
       file_(file), N_(N), N_read_(0), N_to_read_(N), N_last_read_(0),
-      next_slice(InputSlice::allocate(10000000)) {}
+      next_slice(InputSlice::allocate(BYTES_TO_READ)) {}
 
 GzipReader::~GzipReader() {
     next_slice->free();
@@ -37,7 +39,7 @@ void* GzipReader::operator()(void*) {
     next_slice->set_end(next_slice->end() + n_temp);
   }
   InputSlice* ret = next_slice;
-  next_slice = InputSlice::allocate(10000000);
+  next_slice = InputSlice::allocate(BYTES_TO_READ);
   N_last_read_ = ret->count_newline();
   N_read_ += N_last_read_;
   N_to_read_ = N_-N_read_;
