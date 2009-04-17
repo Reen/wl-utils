@@ -50,7 +50,7 @@ public:
       : QMatrix() {}
 
   // Class to use with tbb::parallel_reduce
-  class ParQMatrixMultiplication {
+  /*class ParQMatrixMultiplication {
     matrix_t * float_m_;
 //    dos_matrix_t * dos_m_;
     dos_matrix_t * dos_old_m_;
@@ -105,7 +105,7 @@ public:
       }
       n_gesamt = n;
     }
-  };
+  };*/
 
   void calculate_dos(std::string dos_fn = "") {
     State::lease s;
@@ -139,7 +139,7 @@ public:
       dos.clear();
       // do the matrix-vector-multiplication
       double n(0);
-      /*for (std::size_t nj = 0; nj < outer_rows_; ++nj)
+      for (std::size_t nj = 0; nj < outer_rows_; ++nj)
       {
         int s_nj = int(nj);
         for (std::size_t ej = 0; ej < inner_rows_; ++ej)
@@ -156,14 +156,14 @@ public:
           }
           //std::cout << std::endl;
         }
-      }*/
-      ParQMatrixMultiplication pqmm(q_matrix_, dos_old, outer_cols_,
+      }
+      /*ParQMatrixMultiplication pqmm(q_matrix_, dos_old, outer_cols_,
                                     outer_rows_, inner_cols_,
                                     inner_rows_);
       tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0,outer_rows_),
                            pqmm, tbb::auto_partitioner());
       n = pqmm.n_gesamt;
-      dos = pqmm.dos;
+      dos = pqmm.dos;*/
       // check wether the iteration has converged
       bool converged = true;
       for (dos_matrix_t::array_type::iterator
