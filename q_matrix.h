@@ -109,10 +109,11 @@ public:
   }
   
   void save_to(io::filtering_ostream &out) {
-    out.write((char*)&outer_cols_, sizeof(outer_cols_));
-    out.write((char*)&outer_rows_, sizeof(outer_rows_));
-    out.write((char*)&inner_cols_, sizeof(inner_cols_));
-    out.write((char*)&inner_rows_, sizeof(inner_rows_));
+    uint32_t o_c(outer_cols_), o_r(outer_rows_), i_c(inner_cols_), i_r(inner_rows_);
+    out.write((char*)&o_c, sizeof(o_c));
+    out.write((char*)&o_r, sizeof(o_r));
+    out.write((char*)&i_c, sizeof(i_c));
+    out.write((char*)&i_r, sizeof(i_r));
     std::cout << outer_cols_ << " " << outer_rows_ << " " << inner_cols_ << " " << inner_rows_ << "\n";
 
     for (int i = 0; i < static_cast<int>(outer_cols_); ++i) {
@@ -125,10 +126,15 @@ public:
   }
 
   void load_from(io::filtering_istream &in) {
-    in.read((char*)&outer_cols_, sizeof(outer_cols_));
-    in.read((char*)&outer_rows_, sizeof(outer_rows_));
-    in.read((char*)&inner_cols_, sizeof(inner_cols_));
-    in.read((char*)&inner_rows_, sizeof(inner_rows_));
+    uint32_t o_c, o_r, i_c, i_r;
+    in.read((char*)&o_c, sizeof(o_c));
+    in.read((char*)&o_r, sizeof(o_r));
+    in.read((char*)&i_c, sizeof(i_c));
+    in.read((char*)&i_r, sizeof(i_r));
+    outer_cols_ = o_c;
+    outer_rows_ = o_r;
+    inner_cols_ = i_c;
+    inner_rows_ = i_r;
     std::cout << outer_cols_ << " " << outer_rows_ << " " << inner_cols_ << " " << inner_rows_ << "\n";
 
     resize();
