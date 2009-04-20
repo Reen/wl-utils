@@ -15,11 +15,12 @@ class QMatrixBalanceInterface : public QMatrix {
   void print_(const matrix_t& matrix, std::string file = "") const {
     std::ofstream outfile;
     std::streambuf*  strm_buffer = std::cout.rdbuf();
+    State::lease s;
     if(file != "") {
+      file = s->working_directory()+'/'+file;
       outfile.open(file.c_str());
       std::cout.rdbuf(outfile.rdbuf());
     }
-    State::lease s;
     s->print_to_stream(std::cout);
     std::cout.precision(15);
     for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
@@ -192,7 +193,7 @@ public:
         std::cout << "I: "
                   << std::setw(10) << std::right << i
                   << std::setw(10) << std::right << (t.elapsed()/100.0)
-                  << " seconds/iterations, current dist: " << (dist-1.0)
+                  << " seconds/iteration, d: " << (dist-1.0)
                   << std::endl;
         print_dos(dos, i);
         t.restart();

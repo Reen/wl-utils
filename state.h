@@ -67,7 +67,7 @@ public:
   }
 
   double bin_to_energy(const std::size_t& bin) {
-    return (bin * energy_bin_width_ - min_energy_);
+    return (bin * energy_bin_width_ + min_energy_);
   }
 
   void print_to_stream(std::ostream& os) {

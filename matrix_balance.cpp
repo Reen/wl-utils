@@ -10,6 +10,7 @@
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/filesystem.hpp>
 
 #include "q_matrix_balance_interface.h"
 #include "q_matrix_convert_interface.h"
@@ -61,7 +62,15 @@ int main (int argc, char *argv[])
     s->set_n_energy(nEnergyArg.getValue());
     s->set_volume(volumeArg.getValue());
 
-    s->set_working_directory(workDirArg.getValue());
+    work_dir = workDirArg.getValue();
+    {
+      using namespace boost::filesystem;
+      path work_dir_p(work_dir);
+      if (!exists(work_dir_p) || !is_directory(work_dir_p)) {
+        create_directory(work_dir_p);
+      }
+    }
+    s->set_working_directory(work_dir);
     load_archive = loadArg.getValue();
   }
   catch (TCLAP::ArgException &e)  // catch any exceptions
