@@ -83,25 +83,32 @@ public:
   }
 
   void save_to(io::filtering_ostream &out) {
-    out.write((char*)&min_particles_,sizeof(min_particles_));
-    out.write((char*)&max_particles_,sizeof(max_particles_));
-    out.write((char*)&n_particles_,sizeof(n_particles_));
+    uint32_t min_p(min_particles_), max_p(max_particles_);
+    uint32_t n_p(n_particles_), n_e(n_energy_);
+    out.write((char*)&min_p,sizeof(min_p));
+    out.write((char*)&max_p,sizeof(max_p));
+    out.write((char*)&n_p,sizeof(n_p));
     out.write((char*)&min_energy_,sizeof(min_energy_));
     out.write((char*)&max_energy_,sizeof(max_energy_));
     out.write((char*)&energy_bin_width_,sizeof(energy_bin_width_));
-    out.write((char*)&n_energy_,sizeof(n_energy_));
+    out.write((char*)&n_e,sizeof(n_e));
     out.write((char*)&volume_,sizeof(volume_));
   }
 
   void load_from(io::filtering_istream &in) {
-    in.read((char*)&min_particles_,sizeof(min_particles_));
-    in.read((char*)&max_particles_,sizeof(max_particles_));
-    in.read((char*)&n_particles_,sizeof(n_particles_));
+    uint32_t min_p, max_p, n_p, n_e;
+    in.read((char*)&min_p,sizeof(min_p));
+    in.read((char*)&max_p,sizeof(max_p));
+    in.read((char*)&n_p,sizeof(n_p));
     in.read((char*)&min_energy_,sizeof(min_energy_));
     in.read((char*)&max_energy_,sizeof(max_energy_));
     in.read((char*)&energy_bin_width_,sizeof(energy_bin_width_));
-    in.read((char*)&n_energy_,sizeof(n_energy_));
+    in.read((char*)&n_e,sizeof(n_e));
     in.read((char*)&volume_,sizeof(volume_));
+    min_particles_ = min_p;
+    max_particles_ = max_p;
+    n_particles_ = n_p;
+    n_energy_ = n_e;
   }
 };
 
