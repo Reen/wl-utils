@@ -32,6 +32,7 @@ int main (int argc, char *argv[])
   try
   {
     using namespace boost::assign;
+    using namespace boost::filesystem;
     TCLAP::CmdLine cmd("Matrix Detailed Balance Calculator", ' ', "0.91");
     TCLAP::UnlabeledValueArg<std::string> fileArg("file","Filename of the parQ dat file or Q matrix archive.",true,"","filename", cmd);
     TCLAP::ValueArg<std::string> workDirArg("w", "workdir", "Working directory", false, "", "directory", cmd);
@@ -53,6 +54,13 @@ int main (int argc, char *argv[])
     cmd.parse( argc, argv );
 
     file = fileArg.getValue();
+    {
+      path file_p(file);
+      if(!exists(file_p)) {
+        std::cerr << "File " << file << "does not exist!\n";
+        return -1;
+      }
+    }
     initial_dos = initialDosArg.getValue();
     State::lease s;
     s->set_min_particles(nminArg.getValue());
@@ -63,11 +71,11 @@ int main (int argc, char *argv[])
     s->set_volume(volumeArg.getValue());
 
     work_dir = workDirArg.getValue();
-    {
-      using namespace boost::filesystem;
+    if (work_dir != ""){
       path work_dir_p(work_dir);
       if (!exists(work_dir_p) || !is_directory(work_dir_p)) {
         create_directory(work_dir_p);
+        std::cerr << "Created working directory" << std::endl;
       }
     }
     s->set_working_directory(work_dir);

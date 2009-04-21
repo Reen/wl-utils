@@ -17,7 +17,10 @@ class QMatrixBalanceInterface : public QMatrix {
     std::streambuf*  strm_buffer = std::cout.rdbuf();
     State::lease s;
     if(file != "") {
-      file = s->working_directory()+'/'+file;
+      if (s->working_directory() != "") {
+        file = s->working_directory()+'/'+file;
+      }
+      std::cerr << file << std::endl;
       outfile.open(file.c_str());
       std::cout.rdbuf(outfile.rdbuf());
     }
