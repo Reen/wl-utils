@@ -76,7 +76,7 @@ public:
           dos_old,
           5,
           std::bind2nd(std::minus<std::size_t>(),s->min_particles()),
-          value_to_bin<double>(s->min_energy(), s->n_energy()));
+          value_to_bin<double>(s->min_energy(), s->energy_bin_width()));
     }
 
     boost::timer t;

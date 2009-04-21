@@ -83,7 +83,7 @@ void read_matrix_from_stream(std::istream& in,
       iss >> value;
       i = f1(x_coord);
       j = f2(y_coord);
-      std::cout << i << " " << j << " " << value << std::endl;
+      //std::cout << i << " " << j << " " << y_coord << " " << value << std::endl;
       matrix(i,j) = value;
     }
   }
