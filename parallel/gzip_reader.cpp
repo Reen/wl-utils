@@ -15,6 +15,7 @@ GzipReader::~GzipReader() {
 void* GzipReader::operator()(void*) {
   // großes N ist Anzahl an Zeilen
   // kleines n ist Anzahl Bytes
+  //std::cout << "startet writing to " << next_slice << std::endl;
   if (N_to_read_ == 0) {
     return 0;
   }
@@ -38,12 +39,13 @@ void* GzipReader::operator()(void*) {
     }
     next_slice->set_end(next_slice->end() + n_temp);
   }
+  //std::cout << "finished writing to " << next_slice << std::endl;
   InputSlice* ret = next_slice;
   next_slice = InputSlice::allocate(BYTES_TO_READ);
   N_last_read_ = ret->count_newline();
   N_read_ += N_last_read_;
   N_to_read_ = N_-N_read_;
-  std::cout <</* n_read << " " <<*/ ret->size() << " " << N_last_read_ << " "
-            << N_read_ << " " << N_to_read_ << std::endl;
+  //std::cout << ret << " " << ret->size() << " " << N_last_read_ << " "
+  //          << N_read_ << " " << N_to_read_ << std::endl;
   return ret;
 }

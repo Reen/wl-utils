@@ -122,8 +122,6 @@ private:
     pipeline.add_filter(input_filter);
     ParQTransformFilter transform_filter(matrix, q_mutex_);
     pipeline.add_filter(transform_filter);
-    std::cout << tbb::task_scheduler_init::automatic << std::endl;
-    //pipeline.run(tbb::task_scheduler_init::automatic);
     pipeline.run(8);
     pipeline.clear();
     std::cout << "finnished processing pipeline" << std::endl;

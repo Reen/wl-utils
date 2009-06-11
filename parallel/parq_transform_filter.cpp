@@ -24,6 +24,7 @@ void* ParQTransformFilter::operator()(void* item) {
   char* next_p = 0;
   int N1,N2;
   double E1,E2;
+  //std::cout << "reading from: "<< &input<<std::endl;
   while (true) {
     int rest = input.size()-(p-input.begin());
     if (rest < 1) break;
@@ -40,16 +41,21 @@ void* ParQTransformFilter::operator()(void* item) {
     //std::cout << __LINE__<< std::endl;
     std::size_t ni1 = N1-minParticles;
     std::size_t ni2 = N2-minParticles;
-    //std::cout << N << " " << N1 << " " << N2 << " " << E1 << " " << E2 << std::endl;
+
     if (ni1 < outer_cols_ && ni2 < outer_rows_) {
       std::size_t i1 = static_cast<size_t>((E1-minEnergy)/energyBinWidth);
       std::size_t i2 = static_cast<size_t>((E2-minEnergy)/energyBinWidth);
       if (i1 < inner_cols_ && i2 < inner_rows_) {
         tbb::spin_mutex::scoped_lock lock(q_mutex_(ni1,ni2));
         q_matrix_(ni1,ni2)(i1,i2)++;
+      } else {
+        std::cout << &input << " " << N1 << " " << N2 << " " << E1 << " " << E2 << std::endl;
       }
+    } else {
+      std::cout << &input << " " << N1 << " " << N2 << " " << E1 << " " << E2 << std::endl;
     }
   }
+  //std::cout << "finished reading from: "<< &input <<std::endl;
   input.free();
   return NULL;
 }

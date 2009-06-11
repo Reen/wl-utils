@@ -2,6 +2,7 @@
 #define INPUT_SLICE_H_DR9TZOE4
 
 #include <cstring>
+#include <iostream>
 #include "tbb/tbb_allocator.h"
 
 class InputSlice {
@@ -16,10 +17,12 @@ public:
       InputSlice* t = (InputSlice*)tbb::tbb_allocator<char>().allocate( sizeof(InputSlice)+max_size+1 );
       t->logical_end = t->begin();
       t->physical_end = t->begin()+max_size;
+      //std::cout << "Allocated: " << t << std::endl;
       return t;
   }
   //! Free a TextSlice object 
   void free() {
+      //std::cout << "Freed: " << this << std::endl;
       tbb::tbb_allocator<char>().deallocate((char*)this,size());
   }
   //! Pointer to beginning of sequence
