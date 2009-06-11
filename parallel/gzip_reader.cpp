@@ -4,7 +4,7 @@
 #define BYTES_TO_READ 100000000
 
 GzipReader::GzipReader(gzFile file, std::size_t N)
-    : filter(true),
+    : tbb::filter(true),
       file_(file), N_(N), N_read_(0), N_to_read_(N), N_last_read_(0),
       next_slice(InputSlice::allocate(BYTES_TO_READ)) {}
 

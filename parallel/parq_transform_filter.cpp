@@ -19,6 +19,7 @@ ParQTransformFilter::ParQTransformFilter(int_q_matrix_t &qm,
 }
 
 void* ParQTransformFilter::operator()(void* item) {
+  static tbb::spin_mutex sscanfmutex;
   InputSlice& input = *static_cast<InputSlice*>(item);
   char* p = input.begin();
   char* next_p = 0;
@@ -33,9 +34,12 @@ void* ParQTransformFilter::operator()(void* item) {
     //std::cout << __LINE__<< " " << next_p-input.begin() << std::endl;
     *next_p = '\0';
     //std::cout << __LINE__<< std::endl;
-    int ret = sscanf(p,"%i %i %lf %lf", &N1,&N2,&E1,&E2);
-    //std::cout << p-input.begin() << " " << next_p-input.begin() << " " << next_p-p << " " << ret << std::endl;
-    if (ret != 4) break;
+    {
+      tbb::spin_mutex::scoped_lock lock(sscanfmutex);
+      int ret = sscanf(p,"%i %i %lf %lf", &N1,&N2,&E1,&E2);
+      //std::cout << p-input.begin() << " " << next_p-input.begin() << " " << next_p-p << " " << ret << std::endl;
+      if (ret != 4) break;
+    }
     //std::cout << __LINE__<< std::endl;
     p = next_p+1;
     //std::cout << __LINE__<< std::endl;
