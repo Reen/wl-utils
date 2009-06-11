@@ -6,6 +6,8 @@
 
 #include <boost/progress.hpp>
 
+#include <iomanip>
+
 #include "tbb/pipeline.h"
 #include "tbb/task_scheduler_init.h"
 #include "tbb/blocked_range.h"
@@ -36,6 +38,40 @@ public:
                    std::size_t N = std::numeric_limits<std::size_t>::max(),
                    std::size_t Nskip = 0) {
     return read_file_(file, N, Nskip);
+  }
+
+  void print(std::string file) const {
+    std::ofstream outfile;
+    std::streambuf*  strm_buffer = std::cout.rdbuf();
+    if(file != "") {
+      outfile.open(file.c_str());
+      std::cout.rdbuf(outfile.rdbuf());
+    }
+    State::lease s;
+    s->print_to_stream(std::cout);
+    std::cout.precision(15);
+    for (std::size_t ni = 0; ni < outer_cols_; ++ni) {
+      int s_ni = int(ni);
+      // minor column
+      for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
+        // major row
+        for (std::size_t nj = std::max(s_ni-1, 0);
+             nj < std::min(ni+2, outer_rows_);
+             ++nj) {
+          // minor row
+          for (std::size_t ej = 0; ej < inner_rows_; ++ej) {
+            if (q_matrix_(ni,nj)(ei,ej) > 0.0) {
+              std::cout << std::setw(15) << std::right << (ni - s->min_particles())
+                        << std::setw(15) << std::right << (nj - s->min_particles())
+                        << std::setw(25) << std::right << (s->bin_to_energy(ei))
+                        << std::setw(25) << std::right << (s->bin_to_energy(ej))
+                        << std::setw(25) << std::right << q_matrix_(ni,nj)(ei,ej) << "\n";
+            }
+          }
+        }
+      }
+    }
+    std::cout.rdbuf(strm_buffer);
   }
 
 private:
