@@ -5,3 +5,4 @@ SUBDIRS += matrix_balance.pro
 SUBDIRS += matrix_convert.pro
 SUBDIRS += filter.pro
 SUBDIRS += phase.pro
+SUBDIRS += error.pro

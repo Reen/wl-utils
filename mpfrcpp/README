@@ -1,0 +1,10 @@
+1. To use already built MPFRCPP you should include ``mpfrcpp.hpp'' *ONLY*.
+
+2. You should have the initialization/*.cpp files compiled (as a
+   static library) as well as GMP and MPFR libraries.
+
+   initialization/*.cpp files define global objects and you could drop
+   them.
+
+3. If you want to get MPFRCPP without pre-defined global objects, include
+   <mpfrcpp/mpfrcpp_uninitialized.hpp>.
