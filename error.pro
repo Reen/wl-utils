@@ -2,7 +2,7 @@ include( common.pri )
 
 HEADERS  = include/rootfinding.hpp
 SOURCES  = error.cpp
-LIBS     = -lmpfr
+LIBS     = -lmpfr -lgmp
 BOOST    = -lboost_iostreams
 
 include( system.pri )

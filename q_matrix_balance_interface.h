@@ -142,7 +142,7 @@ public:
     std::size_t nParticles(s->n_particles());
     std::size_t nEnergy(s->n_energy());
 
-    double zero(0), one(1), crit(1.0e-7), dist(0);
+    double zero(0), one(1), crit(1.0e-7), dist(0), dist_old(0);
     std::size_t i(0);
     dos_matrix_t dos(nParticles,nEnergy);
     dos_matrix_t dos_old(nParticles,nEnergy);
@@ -250,6 +250,10 @@ public:
         }
       }
 
+      // norm eigenvector
+      //dos /= std::inner_product(dos.data().begin(), dos.data().end(), dos.data().begin(),0.0);
+      dos /= n;
+
       // check wether the iteration has converged
       bool converged = true;
       for (dos_matrix_t::array_type::iterator
@@ -264,11 +268,9 @@ public:
           }
         }
       }
-      // norm eigenvector
-      //dos /= std::inner_product(dos.data().begin(), dos.data().end(), dos.data().begin(),0.0);
-      dos /= n;
 
       dos_old = dos;
+      dist_old = dist;
       if (converged) {
         print_dos(dos, i);
         dos_matrix_ = dos;
