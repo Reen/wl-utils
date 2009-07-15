@@ -1,9 +1,9 @@
 include( common.pri )
 
-HEADERS  = include/rootfinding.hpp
+HEADERS  = include/rootfinding.hpp exact_dos.h wl_exceptions.h
 SOURCES  = error.cpp
 LIBS     = -lmpfr -lgmp
-BOOST    = -lboost_iostreams
+BOOST    = -lboost_iostreams -lboost_filesystem -lboost_system
 
 include( system.pri )
 

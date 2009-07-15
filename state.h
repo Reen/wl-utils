@@ -19,6 +19,7 @@ private:
   double min_energy_;
   double max_energy_;
   double energy_bin_width_;
+  double half_energy_bin_width_;
   std::size_t n_energy_;
   double volume_;
   std::string working_directory_;
@@ -29,6 +30,7 @@ private:
 
   void set_energy_bin_width() {
     energy_bin_width_ = (max_energy_-min_energy_)/n_energy_;
+    half_energy_bin_width_ = (energy_bin_width_/2.0);
   }
 public:
   State(boost::restricted) : n_energy_(1) {}
@@ -40,6 +42,7 @@ public:
   const double& max_energy() const { return max_energy_; }
   const std::size_t& n_energy() const { return n_energy_; }
   const double& energy_bin_width() const { return energy_bin_width_; }
+  const double& half_energy_bin_width() const { return half_energy_bin_width_; }
   const double& volume() const { return volume_; }
   const std::string& working_directory() const { return working_directory_; }
 
@@ -67,7 +70,8 @@ public:
   }
 
   double bin_to_energy(const std::size_t& bin) {
-    return (bin * energy_bin_width_ + min_energy_);
+    return (bin * energy_bin_width_ + min_energy_
+            + half_energy_bin_width_);
   }
 
   void print_to_stream(std::ostream& os) {
@@ -109,6 +113,7 @@ public:
     max_particles_ = max_p;
     n_particles_ = n_p;
     n_energy_ = n_e;
+    set_energy_bin_width();
   }
 };
 
