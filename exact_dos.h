@@ -29,24 +29,28 @@ public:
   }
 
   value_type operator()(const value_type& U) {
-    if ((U < zero && U + (256*Epsilon*Power(Sigma,6)*(Power(L,6) - 64*Power(Sigma,6)))/Power(L,12) > zero) || U > zero) {
+    value_type sqrt_eps_u_eps = Sqrt(Epsilon*(U + Epsilon));
+    value_type pow_sigma_6 = Power(Sigma,6);
+    value_type pow_L_6 = Power(L,6);
+    value_type pow_L_12 = pow_L_6*pow_L_6;
+    if ((U < zero && U + (256*Epsilon*pow_sigma_6*(pow_L_6 - 64*pow_sigma_6))/pow_L_12 > zero) || U > zero) {
       return (
         (
           Sqrt(2)*Pi*Epsilon*(
-            U + 2*Epsilon - 2*Sqrt(Epsilon*(U + Epsilon))
+            U + 2*(Epsilon - sqrt_eps_u_eps)
           )*Power(Sigma,3)
         )/(
-          3*Power(U,2)*Sqrt(Epsilon*(U + Epsilon))*Sqrt(
-            (-Epsilon + Sqrt(Epsilon*(U + Epsilon)))/U
+          3*Power(U,2)*sqrt_eps_u_eps*Sqrt(
+            (-Epsilon + sqrt_eps_u_eps)/U
           )
         )
       );
     }
-    if(U + (256*Epsilon*Power(Sigma,6)*(Power(L,6) - 64*Power(Sigma,6)))/Power(L,12) <= zero) {
+    if(U + (256*Epsilon*pow_sigma_6*(pow_L_6 - 64*pow_sigma_6))/pow_L_12 <= zero) {
       return (
-        (Sqrt(2)*Pi*Epsilon*((U + 2*Epsilon - 2*Sqrt(Epsilon*(U + Epsilon)))/Sqrt((-Epsilon + Sqrt(Epsilon*(U + Epsilon)))/U) +
-           (U + 2*(Epsilon + Sqrt(Epsilon*(U + Epsilon))))/Sqrt(-((Epsilon + Sqrt(Epsilon*(U + Epsilon)))/U)))*Power(Sigma,3))/
-       (3*Power(U,2)*Sqrt(Epsilon*(U + Epsilon)))
+        (Sqrt(2)*Pi*Epsilon*((U + 2*(Epsilon - sqrt_eps_u_eps))/Sqrt((-Epsilon + sqrt_eps_u_eps)/U) +
+           (U + 2*(Epsilon + sqrt_eps_u_eps))/Sqrt(-((Epsilon + sqrt_eps_u_eps)/U)))*Power(Sigma,3))/
+       (3*Power(U,2)*sqrt_eps_u_eps)
       );
     }
     return 0;
