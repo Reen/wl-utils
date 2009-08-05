@@ -102,7 +102,7 @@ class QMatrixBalanceInterface : public QMatrix {
     State::lease s;
     if(file != "") {
       if (s->working_directory() != "") {
-        file = s->working_directory()+'/'+file;
+        file = s->working_directory()+file;
       }
       std::cerr << file << std::endl;
       outfile.open(file.c_str());
@@ -121,8 +121,8 @@ class QMatrixBalanceInterface : public QMatrix {
           // minor row
           for (std::size_t ej = 0; ej < inner_rows_; ++ej) {
             if (matrix(ni,nj)(ei,ej) > 0.0) {
-              std::cout << std::setw(15) << std::right << (ni - s->min_particles())
-                        << std::setw(15) << std::right << (nj - s->min_particles())
+              std::cout << std::setw(15) << std::right << (ni + s->min_particles())
+                        << std::setw(15) << std::right << (nj + s->min_particles())
                         << std::setw(25) << std::right << (s->bin_to_energy(ei))
                         << std::setw(25) << std::right << (s->bin_to_energy(ej))
                         << std::setw(25) << std::right << matrix(ni,nj)(ei,ej) << "\n";
@@ -312,7 +312,7 @@ public:
   }
 
   void print_dos(const dos_matrix_t& dos, std::size_t iteration) const {
-    char filename[50];
+    char filename[5000];
     State::lease s;
     sprintf(filename, "%sdos.%05lu.dat.gz",
             s->working_directory().c_str(),
