@@ -9,21 +9,22 @@ GzipReader::GzipReader(gzFile file, std::size_t N)
       next_slice(InputSlice::allocate(BYTES_TO_READ)) {}
 
 GzipReader::~GzipReader() {
-    next_slice->free();
+  std::cout << "read: " << N_read_ << std::endl;
+  next_slice->free();
 }
 
 void* GzipReader::operator()(void*) {
   // großes N ist Anzahl an Zeilen
   // kleines n ist Anzahl Bytes
   //std::cout << "startet writing to " << next_slice << std::endl;
-  if (N_to_read_ == 0) {
-    return 0;
+  if (N_to_read_ == 0 || gzeof(file_)) {
+    return NULL;
   }
-  size_t N_by_line = (N_to_read_ < N_last_read_ ? N_to_read_ : 1);
+  size_t N_by_line = (N_to_read_ < 1.1*N_last_read_ ? N_to_read_ : 1);
   // N_by_line is 1 if we have not reached the end yet
   if (N_by_line == 1) {
     size_t n_avail = next_slice->avail();
-    int n_read  = gzread(file_, next_slice->end(), n_avail-1000);
+    int n_read  = gzread(file_, next_slice->end(), n_avail-2000);
     if (n_read < 1 && next_slice->size()==0) {
         // No more characters to process
         return NULL;
@@ -31,12 +32,19 @@ void* GzipReader::operator()(void*) {
     next_slice->set_end(next_slice->end() + n_read);
   }
   for (size_t line = 0; line < N_by_line; ++line) {
-    gzgets(file_, next_slice->end(), 1000);
+    if(next_slice->avail() < 1000) {
+	break;
+    }
+    char* buf = gzgets(file_, next_slice->end(), 1000);
     size_t n_temp = strlen(next_slice->end());
-    if (n_temp == Z_NULL && next_slice->size()==0) {
+    if (gzeof(file_)) {
+	std::cout << "End of file reached."<< std::endl;
+	break;
+    }
+    /*if (buf == Z_NULL && next_slice->size()==0) {
         // No more characters to process
         return NULL;
-    }
+    }*/
     next_slice->set_end(next_slice->end() + n_temp);
   }
   //std::cout << "finished writing to " << next_slice << std::endl;
