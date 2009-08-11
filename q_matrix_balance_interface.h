@@ -350,6 +350,20 @@ public:
       }
     }
   }
+
+  void broad_histogram() {
+    if (outer_cols_ != 1 || outer_rows_ != 1) {
+      return;
+    }
+    dos_matrix_.clear();
+    // minor column
+    for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
+      std::size_t ej = ei+1;
+      dos_matrix_(0,ej) = dos_matrix_(0,ei) + log(
+          q_matrix_(0,0)(ei,ej) / q_matrix_(0,0)(ej,ei));
+    }
+    print_dos(dos_matrix_, 1);
+  }
 };
 
 #endif /* end of include guard: Q_MATRIX_BALANCE_INTERFACE_H_V2LKAPIR */

@@ -110,6 +110,7 @@ int main (int argc, char *argv[])
   qD.calculate_dos(initial_dos);
   std::cerr << "checking detailed balance" << std::endl;
   qD.check_detailed_balance();
-
+  std::cerr << "calculating dos by broad histogram equation" << std::endl;
+  qD.broad_histogram();
   return 0;
 }
