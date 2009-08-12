@@ -311,7 +311,7 @@ public:
     print_(balance, "balance.dat");
   }
 
-  void print_dos(const dos_matrix_t& dos, std::size_t iteration) const {
+  void print_dos(const dos_matrix_t& dos, std::size_t iteration, bool print_all=true) const {
     char filename[5000];
     State::lease s;
     sprintf(filename, "%sdos.%05lu.dat.gz",
@@ -338,7 +338,7 @@ public:
         fakln = n*log(volume)-log(fak);
       }
       for (std::size_t j = 0; j < dos.size2(); ++j) {
-        if(dos(i,j) > 0.0) {
+        if(print_all || dos(i,j) > 0.0) {
           double log_dos = log(dos(i,j));
           out << std::setw(20) << std::right << n
               << std::setw(20) << std::right << s->bin_to_energy(j)
@@ -355,14 +355,21 @@ public:
     if (outer_cols_ != 1 || outer_rows_ != 1) {
       return;
     }
+
+    State::lease s;
+    std::size_t nParticles(s->n_particles());
+    std::size_t nEnergy(s->n_energy());
+
+    dos_matrix_.resize(nParticles,nEnergy);
     dos_matrix_.clear();
     // minor column
-    for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
+    for (std::size_t ei = 0; ei < inner_cols_-1; ++ei) {
       std::size_t ej = ei+1;
       dos_matrix_(0,ej) = dos_matrix_(0,ei) + log(
           q_matrix_(0,0)(ei,ej) / q_matrix_(0,0)(ej,ei));
+      //std::cout << ei << " " << ej << " " << dos_matrix_(0,ei) << " " << (q_matrix_(0,0)(ei,ej) / q_matrix_(0,0)(ej,ei)) << std::endl;
     }
-    print_dos(dos_matrix_, 1);
+    print_dos(dos_matrix_, 1, true);
   }
 };
 
