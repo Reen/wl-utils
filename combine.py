@@ -1,4 +1,28 @@
 #! /usr/bin/env python
+"""
+combine. py - A tool to calculate mean and variance of different data files.
+
+How it works:
+
+    File1:                File2:
+    |   x    y    z|      |   x    y    z|
+
+    becomes:
+    error.dat:
+    |   x    y    z_mean z_var|
+
+Limitations:
+    - data files have to contain data marked up in columns
+    - the columns must have a fixed width which may not vary between the
+      different files, but is allowed to vary between the differen columns
+    - the data inside the columns has to be right aligned
+
+Todo:
+    - make it possible to work with left-aligned data by allowing the user to
+      specify the column widths
+    - make it possible to work with comma seperated values
+"""
+
 import os
 import sys
 import re
@@ -18,10 +42,15 @@ class Ddict(dict):
 def add(x,y): return x+y
 
 def main(argv):
-    opts = OptionParser()
+    usage = "usage: %prog [options] files"
+    opts = OptionParser(usage=usage)
     opts.add_option('--columns', '-c', help="Number of columns to use as key for combination, default is number of columns minus one.", type="int")
     opts.add_option('--data', '-d', help="Column number that should be combined, default is last.", type="int")
     options,arguments = opts.parse_args()
+
+    if len(arguments) < 2:
+        opts.error("Please specify at least two files.")
+        sys.exit()
 
     # defaults
     columns = -1
