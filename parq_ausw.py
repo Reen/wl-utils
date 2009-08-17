@@ -40,6 +40,7 @@ def main():
     run_time = int(m.group(1))
     #print refine_time, run_time
     re_double = re.compile(r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)")
+    re_dos_step = re.compile(r"^dos\.([0-9]+)")
     outfile = open('error.dat', 'w')
     outfile.write("# N_skip	N_read	error\n")
     for nread in range(100*refine_time, run_time, 100*refine_time):
@@ -65,17 +66,22 @@ def main():
                 print command
                 p = subprocess.Popen(command, shell=True)
                 sts = os.waitpid(p.pid, 0)
+            final_dos_file = get_final_dos(workdir)
+            final_dos_step = 0
             command = ("/cluster2/rhab/p/wl-utils/error %(workdir)s/%(dosfile)s") % {
-            'workdir' : workdir, 'dosfile' : get_final_dos(workdir)}
+            'workdir' : workdir, 'dosfile' : final_dos_file }
             print command
             p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
             output = p.communicate()[0]
+            m = re_dos_step.search(final_dos_file)
+            if m:
+                final_dos_step = float(m.group(1))
             m = re_double.search(output)
             if m:
                 error = float(m.group(1))
             else:
                 print "WARNING: Can't find error-value in this output:\n"+output
-            outfile.write("%12d%12d%20.12f\n" % (nskip, nread, error)) 
+            outfile.write("%12d%12d%20.12f%12d\n" % (nskip, nread, error, final_dos_step))
 
 if __name__ == "__main__":
     main()
