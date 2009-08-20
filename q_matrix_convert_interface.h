@@ -8,16 +8,18 @@
 
 #include <iomanip>
 
-#include "tbb/pipeline.h"
+//#include "tbb/pipeline.h"
 #include "tbb/task_scheduler_init.h"
 #include "tbb/blocked_range.h"
 #include "tbb/parallel_for.h"
 
 #include "zlib.h"
 
-#include "parallel/gzip_reader.h"
-#include "parallel/parq_transform_filter.h"
+//#include "parallel/gzip_reader.h"
+//#include "parallel/parq_transform_filter.h"
 
+
+typedef boost::numeric::ublas::banded_matrix<boost::numeric::ublas::matrix< uint32_t, boost::numeric::ublas::column_major >, boost::numeric::ublas::column_major > int_q_matrix_t;
 
 class QMatrixConvertInterface : public QMatrix {
 public:
@@ -128,39 +130,53 @@ private:
     }
   };
 
+  struct binary_line {
+    int32_t N1;
+    int32_t N2;
+    double E1;
+    double E2;
+  };
+
   gzFile read_file_(gzFile file, std::size_t N, std::size_t Nskip) {
-    char buf[1000];
-    // skip comment lines
-    std::size_t n_comments(0);
-    while ((Z_NULL != gzgets(file, buf, 1000)) && buf[0] == '#') {
-      n_comments++;
-      std::cerr << buf;
-    }
     // skip Nskip lines from the beginning
-    if(Nskip > 0) {
-      boost::progress_display show_progress(Nskip, std::cout, "Skipping...\n");
-      while ((Z_NULL != gzgets(file, buf, 1000)) && --Nskip > 0) {
-        ++show_progress;
-      }
+    if (Nskip > 0) {
+      gzseek(file, 24*Nskip,SEEK_SET);
     }
 
     // create a unsinged matrix to operate on
     int_q_matrix_t matrix;
     resize_matrix(matrix, outer_rows_, outer_cols_, inner_rows_, inner_cols_);
 
-    // create a banded matrix of mutexes to lock single sub matrices
-    spin_mutex_matrix q_mutex_;
-    q_mutex_.resize(outer_cols_, outer_rows_, 1, 1);
-
-    // create a processing pipeline
-    tbb::pipeline pipeline;
-    GzipReader input_filter(file, N);
-    pipeline.add_filter(input_filter);
-    ParQTransformFilter transform_filter(matrix, q_mutex_);
-    pipeline.add_filter(transform_filter);
-    pipeline.run(8);
-    pipeline.clear();
-    std::cout << "finnished processing pipeline" << std::endl;
+    int32_t N1, N2;
+    double E1, E2, minEnergy, energyBinWidth;
+    std::size_t outer_cols(matrix.size1()), outer_rows(matrix.size2());
+    std::size_t inner_cols(matrix(0,0).size1()), inner_rows(matrix(0,0).size2()), minParticles;
+    {
+      State::lease s;
+      minParticles = s->min_particles();
+      minEnergy = s->min_energy();
+      energyBinWidth = s->energy_bin_width();
+    }
+    binary_line bl;
+    boost::progress_display show_progress(N, std::cout, "Reading...\n");
+    for(std::size_t i = 0; i < N && !gzeof(file); ++i) {
+      ++show_progress;
+      gzread(file, &bl, 24);
+      //std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << std::endl;
+      std::size_t ni1 = bl.N1-minParticles;
+      std::size_t ni2 = bl.N2-minParticles;
+      if (ni1 < outer_cols && ni2 < outer_rows) {
+        std::size_t i1 = static_cast<size_t>((bl.E1-minEnergy)/energyBinWidth);
+        std::size_t i2 = static_cast<size_t>((bl.E2-minEnergy)/energyBinWidth);
+        if (i1 < inner_cols && i2 < inner_rows) {
+          matrix(ni1,ni2)(i1,i2)++;
+        } else {
+          std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << std::endl;
+        }
+      } else {
+        std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << std::endl;
+      }
+    }
     // create the stochastic matrix from the integer matrix
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0,outer_cols_),
                       TransformToStochastic(matrix, q_matrix_,
