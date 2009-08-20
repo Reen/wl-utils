@@ -145,8 +145,8 @@ int main (int argc, char const *argv[])
 	boost::iostreams::filtering_ostream parq, data, output;
 	
 	// open file for parq-data with gzip comrpession
-	parq.push(boost::iostreams::gzip_compressor());
-	parq.push(boost::iostreams::file_sink("parq.dat.gz"));
+	//parq.push(boost::iostreams::gzip_compressor());
+	parq.push(boost::iostreams::file_sink("parq.dat.info"));
 	
 	// open file for some statistical data
 	data.push(boost::iostreams::file_sink("wang_landau.dat"));
