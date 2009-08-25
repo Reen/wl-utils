@@ -12,6 +12,7 @@
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/xtime.hpp>
@@ -206,10 +207,10 @@ int main (int argc, char const *argv[])
 							<< std::setw(15) << std::right << std::setfill('0') << timestep
 							<< "_"
 							<< ln_f
-							<< ".dat.gz";
+							<< ".dat.bz2";
 				}
 				boost::iostreams::filtering_ostream dosFile;
-				dosFile.push(boost::iostreams::gzip_compressor());
+				dosFile.push(boost::iostreams::bzip2_compressor());
 				dosFile.push(boost::iostreams::file_sink( (dosPath / filename.str() ).string()));
 				//config_str.seekg(0, ios::beg);
 				//boost::iostreams::copy(config_str, dosFile);
@@ -246,10 +247,10 @@ int main (int argc, char const *argv[])
 							<< std::setw(15) << std::right << std::setfill('0') << timestep
 							<< "_"
 							<< ln_f
-							<< ".dat.gz";
+							<< ".dat.bz2";
 				}
 				boost::iostreams::filtering_ostream histFile;
-				histFile.push(boost::iostreams::gzip_compressor());
+				histFile.push(boost::iostreams::bzip2_compressor());
 				histFile.push(boost::iostreams::file_sink( (histPath / filename.str()).string() ));
 				//config_str.seekg(0, ios::beg);
 				//boost::iostreams::copy(config_str, histFile);
