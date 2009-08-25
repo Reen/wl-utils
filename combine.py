@@ -46,6 +46,8 @@ def main(argv):
     opts = OptionParser(usage=usage)
     opts.add_option('--columns', '-c', help="Number of columns to use as key for combination, default is number of columns minus one.", type="int")
     opts.add_option('--data', '-d', help="Column number that should be combined, default is last.", type="int")
+    opts.add_option('--out', '-o', help="Name of the output file, default is error.dat", type="string")
+    opts.add_option('--required', '-r', help="Number of datapoints required for calculation of mean and variance, default is 2.", type="int")
     options,arguments = opts.parse_args()
 
     if len(arguments) < 2:
@@ -55,12 +57,20 @@ def main(argv):
     # defaults
     columns = -1
     data_col = None
+    outfn = "error.dat"
+    required_points = 2
 
     if options.columns:
         columns = options.columns
 
     if options.data:
         data_col = options.data
+
+    if options.out:
+        outfn = options.out
+
+    if options.required:
+        required_points = options.required
 
     #data = defaultdict(defaultdict([]))
     data = Ddict( lambda: Ddict ( list ) )
@@ -94,6 +104,7 @@ def main(argv):
                 for col in m[columns:]:
                     data_column_widths.append(len(col))
                 infile.seek(0)
+        #print data_column_widths
         for line in infile:
             if line.startswith('#'):
                 continue
@@ -108,9 +119,10 @@ def main(argv):
             #data[line[0:column_width]].append(line[column_width:].strip())
     #print data
     #sys.exit()
-    outfile = open("error.dat", "w")
-    for k,v in data.items():
-        outfile.write('%s' % k)
+    outfile = open(outfn, "w")
+    for k in sorted(data.iterkeys()):
+        v = data[k]
+        dataline = ''
         for kk,vv in v.items():
             mean = 0.0
             varianceAcc = 0.0
@@ -119,13 +131,14 @@ def main(argv):
                 mean += vvv
                 varianceAcc += (vvv*vvv)
                 count+=1
-            if count > 1:
+            if count >= required_points:
                 mean /= count
                 variance = varianceAcc/(count-1)-(mean*mean)
                 data[k] = [mean, variance]
                 #print '%10s%10s%20g%20g' % ( k,kk,mean,variance )
-                outfile.write('%20g%20g' % ( mean,variance ))
-        outfile.write('\n')
+                dataline += ('%20g%20g' % ( mean,variance ))
+        if len(dataline) > 0:
+            outfile.write('%s%s\n' % (k,dataline))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
