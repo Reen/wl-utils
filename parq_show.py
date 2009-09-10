@@ -78,7 +78,10 @@ def grid(opts, infile):
     x = np.linspace(emin, emax, bins+1)
     X,Y = np.meshgrid(x,x)
     start_time = time.time()
-    plt.pcolor(X, Y, data, norm=matplotlib.colors.LogNorm())
+    #plt.pcolor(X, Y, data, norm=matplotlib.colors.LogNorm())
+    # matshow is around 10x faster for 200bins and does not scale O(N^2)
+    # thus plotting at 500 bins takes nearly the same amount of time as 200 bins
+    plt.matshow(data, norm=matplotlib.colors.LogNorm(), origin='lower', extent=(emin, emax, emin, emax))
     print "finished plotting after %.2f seconds" % (time.time() - start_time)
     plt.colorbar()
     plt.xlabel("Energy from")
