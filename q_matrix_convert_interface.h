@@ -171,10 +171,10 @@ private:
         if (i1 < inner_cols && i2 < inner_rows) {
           matrix(ni1,ni2)(i1,i2)++;
         } else {
-          std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << std::endl;
+          std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << "\n";
         }
       } else {
-        std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << std::endl;
+        std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << "\n";
       }
     }
     // create the stochastic matrix from the integer matrix
