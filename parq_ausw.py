@@ -113,4 +113,4 @@ def main():
             outfile.write("%12d%12d%20.12f%12d\n" % (nskip, nread, error, final_dos_step))
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

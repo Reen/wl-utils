@@ -190,6 +190,7 @@ private:
                                             outer_cols_, outer_rows_,
                                             inner_cols_, inner_rows_),
                       tbb::auto_partitioner());
+    std::cout << "Skipped lines: " << skip_count << std::endl;
     return file;
   }
 };
