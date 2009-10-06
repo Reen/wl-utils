@@ -159,6 +159,7 @@ private:
     }
     binary_line bl;
     boost::progress_display show_progress(N, std::cout, "Reading...\n");
+    std::size_t skip_count(0);
     for(std::size_t i = 0; i < N && !gzeof(file); ++i) {
       ++show_progress;
       gzread(file, &bl, 24);
@@ -171,10 +172,16 @@ private:
         if (i1 < inner_cols && i2 < inner_rows) {
           matrix(ni1,ni2)(i1,i2)++;
         } else {
+          skip_count++;
+#ifndef NDEBUG
           std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << "\n";
+#endif
         }
       } else {
+        skip_count++;
+#ifndef NDEBUG
         std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << "\n";
+#endif
       }
     }
     // create the stochastic matrix from the integer matrix
