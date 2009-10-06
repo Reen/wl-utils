@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import subprocess
+from optparse import OptionParser
 
 re_double = re.compile(r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)")
 
@@ -37,6 +38,10 @@ def process_wl_error(path, outfile):
 
 
 def main():
+    usage = "usage: %prog [options]"
+    opts = OptionParser(usage=usage)
+    opts.add_option('--process-wl-error', help="Check error of WL density of state files.", action="store_true")
+    options,arguments = opts.parse_args()
     cwd = os.getcwd()
     towhee_input = cwd+"/towhee_input"
     parq_file = cwd+"/parq.dat.gz"
@@ -65,7 +70,8 @@ def main():
     re_dos_step = re.compile(r"^dos\.([0-9]+)")
     outfile = open('error.dat', 'w')
     outfile.write("# N_skip	N_read	error\n")
-    process_wl_error(cwd+"/dos", cwd+'/wl_error.dat')
+    if options.process_wl_error:
+        process_wl_error(cwd+"/dos", cwd+'/wl_error.dat')
     for nread in range(100*refine_time, run_time, 100*refine_time):
         for nskip in range(0, run_time-nread, 100*refine_time):
             matrix_file = parq_dir+('/mat_%09d_%09d.dat' % (nskip,nread))
@@ -107,4 +113,4 @@ def main():
             outfile.write("%12d%12d%20.12f%12d\n" % (nskip, nread, error, final_dos_step))
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
