@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+# -*- Mode: Python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 import os
 import sys
 import struct
@@ -98,18 +98,18 @@ def main(argv):
     options,arguments = opts.parse_args()
 
     command = 'show'
-    file = None
+    filename = None
     if len(arguments) == 2:
-        command,file = arguments
+        command,filename = arguments
 
 
     infile = None
-    if file[-2:] == 'gz':
-        infile = gzip.open(file, "rb")
-    elif file[-3:] == 'bz2':
-        infile = bz2.open(file, "rb")
+    if filename[-2:] == 'gz':
+        infile = gzip.open(filename, "rb")
+    elif filename[-3:] == 'bz2':
+        infile = bz2.open(filename, "rb")
     else:
-        infile = open(file, "rb")
+        infile = open(filename, "rb")
 
     globals()[command](options,infile)
     
