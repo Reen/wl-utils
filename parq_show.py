@@ -88,6 +88,50 @@ def grid(opts, infile):
     plt.ylabel("Energy to")
     plt.show()
 
+def timecorr(opts, infile):
+    read = 0
+    mean_data = []
+    var_data = []
+    num_combine = 10000
+    struct_str = num_combine*'d'
+    combine_range = range(num_combine)
+    num_combine = float(num_combine)
+    infile.seek(8, os.SEEK_CUR)
+    previous_E = struct.unpack('d', infile.read(8))
+    previous_E = previous_E[0]
+    infile.seek(16, os.SEEK_CUR)
+    eof_reached = False
+    while True:
+        line = ""
+        for i in combine_range:
+            tmp = infile.read(8)
+            if not tmp:
+                eof_reached = True
+                break
+            line+=tmp
+            infile.seek(16, os.SEEK_CUR)
+            read+=1
+        if eof_reached:
+            break;
+        E = struct.unpack(struct_str, line)
+        meanAcc = 0
+        varAcc = 0
+        for e in E:
+            tmp = previous_E-e
+            meanAcc += tmp
+            varAcc  += tmp*tmp
+            previous_E = e
+        mean = meanAcc / num_combine
+        mean_data.append(mean)
+        var_data.append(varAcc/num_combine - mean*mean)
+        if read > 100000000:
+            break
+    #print mean_data
+    plt.plot(mean_data)
+    #plt.plot(var_data)
+    plt.show()
+    pass
+
 def main(argv):
     usage = "usage: %prog [options] files"
     opts = OptionParser(usage=usage)
