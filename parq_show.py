@@ -133,6 +133,22 @@ def timecorr(opts, infile):
     plt.show()
     pass
 
+def showmat(opts, infile):
+    data = infile.read(48)
+    min_particles, max_particls, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume = struct.unpack("IIIdddId",data)
+    data = infile.read(16)
+    outer_cols, outer_rows, inner_cols, inner_rows = struct.unpack("IIII",data)
+    print min_particles, max_particls, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume
+    print outer_cols, outer_rows, inner_cols, inner_rows
+    data = infile.read(inner_cols*inner_rows*8)
+    arr = np.fromstring(data, dtype=float)
+    arr[arr==0] = min(arr[arr!=0])/10.0
+    plt.matshow(np.reshape(arr, [inner_cols,inner_rows]), norm=matplotlib.colors.LogNorm(), origin='lower', extent=(min_energy, max_energy, min_energy, max_energy))
+    plt.colorbar()
+    plt.xlabel("Energy from")
+    plt.ylabel("Energy to")
+    plt.show()
+
 def main(argv):
     usage = "usage: %prog [options] files"
     opts = OptionParser(usage=usage)
