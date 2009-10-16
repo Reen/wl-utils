@@ -89,46 +89,47 @@ def grid(opts, infile):
     plt.show()
 
 def timecorr(opts, infile):
+    read_max = sys.maxint
+    num_combine = 1
+    if opts.read:
+        read_max = int( opts.read )
+    if opts.combine:
+        num_combine = opts.combine
     read = 0
-    mean_data = []
-    var_data = []
-    num_combine = 10000
-    struct_str = num_combine*'d'
+    energy1_data = np.zeros( (read_max), dtype=float )
+    energy2_data = np.zeros( (read_max), dtype=float )
+    struct_str = num_combine*'dd'
     combine_range = range(num_combine)
     num_combine = float(num_combine)
     infile.seek(8, os.SEEK_CUR)
-    previous_E = struct.unpack('d', infile.read(8))
-    previous_E = previous_E[0]
-    infile.seek(16, os.SEEK_CUR)
     eof_reached = False
-    while True:
-        line = ""
-        for i in combine_range:
-            tmp = infile.read(8)
+    if num_combine == 1:
+        while read < read_max:
+            tmp = infile.read(16)
             if not tmp:
                 eof_reached = True
                 break
-            line+=tmp
-            infile.seek(16, os.SEEK_CUR)
+            infile.seek(8, os.SEEK_CUR)
+            if eof_reached:
+                break;
+            E1,E2 = struct.unpack(struct_str, tmp)
+            energy1_data[read] = E1
+            energy2_data[read] = E2
             read+=1
-        if eof_reached:
-            break;
-        E = struct.unpack(struct_str, line)
-        meanAcc = 0
-        varAcc = 0
-        for e in E:
-            tmp = previous_E-e
-            meanAcc += tmp
-            varAcc  += tmp*tmp
-            previous_E = e
-        mean = meanAcc / num_combine
-        mean_data.append(mean)
-        var_data.append(varAcc/num_combine - mean*mean)
-        if read > 100000000:
-            break
-    #print mean_data
-    plt.plot(mean_data)
-    #plt.plot(var_data)
+            if read > 100000000:
+                break
+    else:
+        return
+    
+    plt.subplot(221)
+    plt.plot(energy1_data)
+    plt.subplot(222)
+    plt.hist(energy1_data, orientation='horizontal', bins=100, range=(-1.0,3.0), log=True)
+    plt.subplot(223)
+    plt.plot(energy2_data)
+    plt.subplot(224)
+    plt.hist(energy2_data, orientation='horizontal', bins=100, range=(-1.0,3.0), log=True)
+    
     plt.show()
     pass
 
@@ -138,6 +139,7 @@ def main(argv):
     opts.add_option('--read', '-r', help="Number of rows to read", type="int")
     opts.add_option('--skip', '-s', help="Number of rows to skip", type="int")
     opts.add_option('--bins', '-b', help="Number of bins", type="int")
+    opts.add_option('--combine', '-c', help="Number of values to combine to one value", type="int")
  
     options,arguments = opts.parse_args()
 
