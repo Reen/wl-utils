@@ -214,7 +214,7 @@ int main (int argc, char *argv[])
 
   if(output_file.size() == 0) {
     output_file = "error.dat";
-    std::err << "You did not provide an outfile! Assuming error.dat!" << std::endl;
+    std::cerr << "You did not provide an outfile! Assuming error.dat!" << std::endl;
   }
   using namespace boost::xpressive;
   sregex fn_rex = sregex::compile("(?:dos3_|dos\\.).+\\.dat(?:\\.gz|\\.bz2)?");
