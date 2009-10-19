@@ -15,15 +15,16 @@ def get_final_dos(path):
     return files[0]
 
 def process_wl_error(path, outfile):
+    re_dos_file = re.compile(r"^dos3.+\.dat$")
     files = os.listdir(path)
-    files = [elem for elem in files if elem[0:4] == "dos3"]
+    files = [elem for elem in files if re_dos_file.match(elem)]
     data = {}
     outfile = open(outfile, "w")
     for file in files:
         elems = file.split('.dat')[0].split('_')
         timestep = int(elems[1])
         refine = float(elems[2])
-        command = ("/cluster2/rhab/p/wl-utils/error %(workdir)s/%(dosfile)s") % {
+        command = ("/cluster2/rhab/p/wl-utils/error --output %(workdir)s/%(dosfile)s") % {
                   'workdir' : path, 'dosfile' : file }
         print command
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
@@ -72,8 +73,8 @@ def main():
     outfile.write("# N_skip	N_read	error\n")
     if options.process_wl_error:
         process_wl_error(cwd+"/dos", cwd+'/wl_error.dat')
-    for nread in range(100*refine_time, run_time, 100*refine_time):
-        for nskip in range(0, run_time-nread, 100*refine_time):
+    for nread in range(100*refine_time, run_time+(100*refine_time), 100*refine_time):
+        for nskip in range(0, run_time-nread+(100*refine_time), 100*refine_time):
             matrix_file = parq_dir+('/mat_%09d_%09d.dat' % (nskip,nread))
             workdir = parq_dir+('/work_%09d_%09d' % (nskip, nread))
             if not os.path.exists(matrix_file):
@@ -97,7 +98,7 @@ def main():
                 sts = os.waitpid(p.pid, 0)
             final_dos_file = get_final_dos(workdir)
             final_dos_step = 0
-            command = ("/cluster2/rhab/p/wl-utils/error %(workdir)s/%(dosfile)s") % {
+            command = ("/cluster2/rhab/p/wl-utils/error --output %(workdir)s/%(dosfile)s") % {
             'workdir' : workdir, 'dosfile' : final_dos_file }
             print command
             p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
