@@ -150,7 +150,7 @@ public:
     sum /= i;
 
     if (output_data) {
-      if (batch) {
+      if (true /*batch*/) {
         using namespace boost::xpressive;
         sregex fn_rex = sregex::compile("(\\.dat(?:\\.gz)?(?:\\.bz2)?)");
         //std::string err_file = working_directory_ + '/' +
@@ -163,9 +163,9 @@ public:
         } else {
           err_out << "# mean error " << sum << "\n" << out.str();
         }
-      } else {
+      }/* else {
         std::cout << "# mean error " << sum << "\n" << out.str();
-      }
+      }*/
     }
     short_out << std::setw(20) << std::right << timestep
               << std::setw(20) << std::right << sum << "\n";
