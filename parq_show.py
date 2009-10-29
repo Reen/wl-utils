@@ -1,12 +1,14 @@
 #! /usr/bin/env python
 # -*- Mode: Python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 import os
+import re
 import sys
 import struct
 import time
 import gzip
 import bz2
 import numpy as np
+import matplotlib
 import matplotlib.colors
 import matplotlib.pyplot as plt
 from optparse import OptionParser
@@ -134,6 +136,8 @@ def timecorr(opts, infile):
     pass
 
 def showmat(opts, infile):
+    filename = infile.name
+    infile = gzip.GzipFile(fileobj=infile)
     data = infile.read(48)
     min_particles, max_particls, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume = struct.unpack("IIIdddId",data)
     data = infile.read(16)
@@ -143,11 +147,19 @@ def showmat(opts, infile):
     data = infile.read(inner_cols*inner_rows*8)
     arr = np.fromstring(data, dtype=float)
     arr[arr==0] = min(arr[arr!=0])/10.0
+    if(opts.pdf):
+        matplotlib.rcParams['font.family'] = "serif"
+        matplotlib.rcParams['font.serif'] = "Latin Modern Roman"
+        matplotlib.rcParams['figure.figsize'] = 10,7
     plt.matshow(np.reshape(arr, [inner_cols,inner_rows]), norm=matplotlib.colors.LogNorm(), origin='lower', extent=(min_energy, max_energy, min_energy, max_energy))
     plt.colorbar()
     plt.xlabel("Energy from")
     plt.ylabel("Energy to")
-    plt.show()
+    plt.title(filename)
+    if(opts.pdf):
+        plt.savefig(re.sub(r"\/", "_", filename)+".pdf", format="pdf", dpi=300, papertype="A4")
+    else:
+        plt.show()
 
 def main(argv):
     usage = "usage: %prog [options] files"
@@ -156,6 +168,7 @@ def main(argv):
     opts.add_option('--skip', '-s', help="Number of rows to skip", type="int")
     opts.add_option('--bins', '-b', help="Number of bins", type="int")
     opts.add_option('--combine', '-c', help="Number of values to combine to one value", type="int")
+    opts.add_option('--pdf', '', help="Create a PDF document instead of showing the graph.", action="store_true")
  
     options,arguments = opts.parse_args()
 
