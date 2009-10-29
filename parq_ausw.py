@@ -9,7 +9,7 @@ re_double = re.compile(r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)")
 
 def get_final_dos(path):
     files = os.listdir(path)
-    re_dos = re.compile(r"^dos")
+    re_dos = re.compile(r"^dos.+\.dat(\.gz)?$")
     files = [elem for elem in files if re_dos.match(elem)]
     files.sort(reverse=True)
     return files[0]
@@ -106,7 +106,12 @@ def main():
             m = re_dos_step.search(final_dos_file)
             if m:
                 final_dos_step = float(m.group(1))
-            m = re_double.search(output)
+            output_db = ''
+            for line in output.split("\n"):
+                if line.startswith("WARNING") or line.startswith("Processing"):
+                    continue
+                output_db += line
+            m = re_double.search(output_db)
             if m:
                 error = float(m.group(1))
             else:
