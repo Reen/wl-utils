@@ -125,7 +125,7 @@ public:
     }
   }
 
-  void load_from(io::filtering_istream &in) {
+  void load_from(io::filtering_istream &in, bool do_resize = true) {
     uint32_t o_c, o_r, i_c, i_r;
     in.read((char*)&o_c, sizeof(o_c));
     in.read((char*)&o_r, sizeof(o_r));
@@ -137,7 +137,9 @@ public:
     inner_rows_ = i_r;
     std::cout << outer_cols_ << " " << outer_rows_ << " " << inner_cols_ << " " << inner_rows_ << "\n";
 
-    resize();
+    if(do_resize) {
+        resize();
+    }
 
     for (int i = 0; i < static_cast<int>(outer_cols_); ++i) {
       for (int j = std::max(i-1, 0);
