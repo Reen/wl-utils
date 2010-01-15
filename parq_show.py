@@ -15,14 +15,44 @@ from optparse import OptionParser
 
 row_length = 24
 
-def show(opts, infile):
+def mat_get_header(infile, do_print = True):
+    data = infile.read(48)
+    min_particles, max_particles, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume = struct.unpack("IIIdddId",data)
+    data = infile.read(16)
+    outer_cols, outer_rows, inner_cols, inner_rows = struct.unpack("IIII",data)
+    data = {
+        "min_particles" : min_particles,
+        "max_particles" : max_particles,
+        "n_particles"   : n_particles,
+        "min_energy"    : min_energy,
+        "max_energy"    : max_energy,
+        "energy_bin_width" : energy_bin_width,
+        "n_energy"      : n_energy,
+        "volume"        : volume,
+        "outer_cols"    : outer_cols,
+        "outer_rows"    : outer_rows,
+        "inner_cols"    : inner_cols,
+        "inner_rows"    : inner_rows
+    }
+    if do_print:
+        from string import Template
+        templ = Template("""Matrix Informationen:
+Size: ${outer_cols}*${inner_cols} X ${outer_rows}*${inner_rows}
+System:
+  Particles: $min_particles - $max_particles | $n_particles
+  Energy   : $min_energy - $max_energy | $n_energy | $energy_bin_width
+  Volume   : $volume""")
+        print templ.safe_substitute(data)
+    return data
+
+def show(opts, infile, filename):
     line = infile.read(24)
     while line:
         n1, n2, e1, e2 = struct.unpack('iidd', line)
         line = infile.read(24)
         print n1, n2, e1, e2
 
-def histogram(opts, infile):
+def histogram(opts, infile, filename):
     global row_length
     read = 0
     skip = 0
@@ -43,7 +73,7 @@ def histogram(opts, infile):
     n,bins,patches = plt.hist(data, 50, normed=1, facecolor='g', alpha=0.75)
     plt.show()
 
-def grid(opts, infile):
+def grid(opts, infile, filename):
     global row_length
     read, skip = 0, 0
     emin, emax = -1.0, 3.0
@@ -90,7 +120,7 @@ def grid(opts, infile):
     plt.ylabel("Energy to")
     plt.show()
 
-def timecorr(opts, infile):
+def timecorr(opts, infile, filename):
     read_max = sys.maxint
     num_combine = 1
     if opts.read:
@@ -135,18 +165,14 @@ def timecorr(opts, infile):
     plt.show()
     pass
 
-def showmat(opts, infile):
-    filename = infile.name
-    infile = gzip.GzipFile(fileobj=infile)
-    data = infile.read(48)
-    min_particles, max_particls, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume = struct.unpack("IIIdddId",data)
-    data = infile.read(16)
-    outer_cols, outer_rows, inner_cols, inner_rows = struct.unpack("IIII",data)
-    print min_particles, max_particls, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume
-    print outer_cols, outer_rows, inner_cols, inner_rows
+def showmat(opts, infile, filename):
+    settings = mat_get_header(infile)
+    infile.seek(330*inner_cols*inner_rows*8,os.SEEK_CUR)
     data = infile.read(inner_cols*inner_rows*8)
     arr = np.fromstring(data, dtype=float)
-    arr[arr==0] = min(arr[arr!=0])/10.0
+    min_arr = arr[arr!=0]
+    if(len(min_arr) > 0):
+        arr[arr==0] = min(min_arr)/10.0
     if(opts.pdf):
         matplotlib.rcParams['font.family'] = "serif"
         matplotlib.rcParams['font.serif'] = "Latin Modern Roman"
@@ -160,6 +186,62 @@ def showmat(opts, infile):
         plt.savefig(re.sub(r"\/", "_", filename)+".pdf", format="pdf", dpi=300, papertype="A4")
     else:
         plt.show()
+
+
+def to_sparse(file_str1, file_str2, arr, inner_rows, inner_cols, i, j):
+    count = 0
+    for ei in range(0,inner_rows):
+        for ej in range(0, inner_cols):
+            if(arr[ei,ej] != 0):
+                i1 = str(j*inner_rows+ej+1) # +1 for 1 based indices
+                i2 = str(i*inner_cols+ei+1) # +1 for 1 based indices
+                val = "%.12g" % (arr[ei,ej])
+                file_str1.write("%s %s %s\n" %(i1, i2, val))
+                file_str2.write("%s %s %s\n" %(i2, i1, val))
+                count+=1
+    return count
+
+def convertmat(opts, infile, filename):
+    from cStringIO import StringIO
+    from progress_bar import ProgressBar
+    file_str_1 = StringIO()
+    file_str_2 = StringIO()
+    file_str_3 = StringIO()
+    file_str_4 = StringIO()
+    settings = mat_get_header(infile)
+    outer_cols = settings["outer_cols"]
+    outer_rows = settings["outer_rows"]
+    inner_cols = settings["inner_cols"]
+    inner_rows = settings["inner_rows"]
+    count = 0
+    count_mat = 0
+    prog = ProgressBar(0, outer_cols*3-2, 77, mode='fixed', char='#')
+    for i in range(0,outer_cols):
+        for j in range(max(i-1,0),min(i+2,outer_rows)):
+            data = infile.read(inner_cols*inner_rows*8)
+            arr = np.fromstring(data, dtype=float)
+            arr = np.reshape(arr, [inner_cols, inner_rows])
+            count += to_sparse(file_str_3, file_str_4, arr, inner_rows, inner_cols, i, j)
+            if i == j:
+                for ei in range(0,inner_rows):
+                    arr[ei,ei] -= 1
+            count_mat += to_sparse(file_str_1, file_str_2, arr, inner_rows, inner_cols, i, j)
+            prog.increment_amount()
+            print prog, '\r',
+            sys.stdout.flush()
+    print "\n"
+    filename = filename.rsplit('.')[0]
+    out1 = open("%s-mat.sparse" % (filename), "w")
+    out2 = open("%s-mat-t.sparse" % (filename), "w")
+    out3 = open("%s-eig.sparse" % (filename), "w")
+    out4 = open("%s-eig-t.sparse" % (filename), "w")
+    work = [{"out":out1, "fs":file_str_1, "count":count_mat}, {"out":out2, "fs":file_str_2, "count":count_mat}, {"out":out3, "fs":file_str_3, "count":count}, {"out":out4, "fs":file_str_4, "count":count}]
+    for cur in work:
+        print "creating file %s" % (cur["out"].filename)
+        cur["out"].write("%%MatrixMarket matrix coordinate real general\n")
+        cur["out"].write("%d %d %d\n" % (inner_cols*outer_cols, inner_rows*outer_rows, cur["count"]))
+        cur["out"].write(cur["fs"].getvalue())
+
 
 def main(argv):
     usage = "usage: %prog [options] files"
@@ -186,7 +268,7 @@ def main(argv):
     else:
         infile = open(filename, "rb")
 
-    globals()[command](options,infile)
+    globals()[command](options,infile, filename)
     
 
 if __name__ == "__main__":
