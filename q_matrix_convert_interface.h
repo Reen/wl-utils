@@ -1,3 +1,4 @@
+// -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 #ifndef Q_MATRIX_CONVERT_INTERFACE_H_4X1WK1KG
 #define Q_MATRIX_CONVERT_INTERFACE_H_4X1WK1KG
 

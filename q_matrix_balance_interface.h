@@ -1,6 +1,6 @@
 #ifndef Q_MATRIX_BALANCE_INTERFACE_H_V2LKAPIR
 #define Q_MATRIX_BALANCE_INTERFACE_H_V2LKAPIR
-
+// -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 #include "q_matrix.h"
 #include "state.h"
 #include "matrix_generics.h"
