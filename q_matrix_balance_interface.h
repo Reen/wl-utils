@@ -647,11 +647,11 @@ public:
         break;
       }
 
-      if (i%100 == 0) {
+      if (i%1000 == 0) {
         std::cout << "I: "
                   << std::setw(10) << std::right << i
-                  << std::setw(10) << std::right << (t.elapsed()/100.0)
-                  << " seconds/iteration, d: "
+                  << std::setw(10) << std::right << (1000.0/t.elapsed())
+                  << " iterations/second, d: "
                   << std::setw(10) << std::right << (dist-1.0)
                   << std::setw(10) << std::right << (zero_mat.data().size() - std::accumulate(zero_mat.data().begin(), zero_mat.data().end(), 0u))
                   << std::endl;
@@ -709,11 +709,11 @@ public:
       t1 += t2;
       residual = ublas::norm_2(t1);
       t1 = t2/ublas::norm_2(t2);
-      if (i%100 == 0) {
+      if (i%1000 == 0) {
         std::cout << "I: "
                   << std::setw(10) << std::right << i
-                  << std::setw(10) << std::right << (t.elapsed()/100.0)
-                  << " seconds/iteration, d: "
+                  << std::setw(10) << std::right << (1000.0/t.elapsed())
+                  << " iterations/second, d: "
                   << std::setw(12) << std::right << (dist-1.0)
                   << std::setw(10) << std::right << lambda
                   << std::setw(12) << std::right << residual
@@ -782,7 +782,7 @@ public:
   void print_dos(const std::string& prefix, const dos_matrix_t& dos, std::size_t iteration, bool print_all=true) const {
     char filename[5000];
     State::lease s;
-    sprintf(filename, "%s%s.%05lu.dat.gz",
+    sprintf(filename, "%s%s.%06lu.dat.gz",
             s->working_directory().c_str(),
             prefix.c_str(),
             iteration);
