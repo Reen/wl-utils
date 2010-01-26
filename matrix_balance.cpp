@@ -106,11 +106,11 @@ int main (int argc, char *argv[])
     gzclose(parq_file_1);
   }
   QMatrixBalanceInterface< QMatrix<double> > qD(qD_m);*/
-  std::cerr << "calculating" << std::endl;
-  qD.calculate_dos(initial_dos);
-  std::cerr << "checking detailed balance" << std::endl;
-  qD.check_detailed_balance();
   std::cerr << "calculating dos by broad histogram equation" << std::endl;
   qD.broad_histogram();
+  std::cerr << "calculating" << std::endl;
+  qD.calculate_dos(initial_dos);
+  //std::cerr << "checking detailed balance" << std::endl;
+  //qD.check_detailed_balance();
   return 0;
 }
