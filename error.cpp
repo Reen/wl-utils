@@ -144,8 +144,10 @@ public:
         i++;
         sum += tmp;
       }
-      out << it->first << " " << omega_[it->first] << " "
-          << (it->second.first+diff) << " " << tmp << "\n";
+      out << std::setw(20) << std::right << it->first
+          << std::setw(20) << std::right << omega_[it->first]
+          << std::setw(20) << std::right << (it->second.first+diff)
+          << std::setw(20) << std::right << tmp << "\n";
     }
     sum /= i;
 
