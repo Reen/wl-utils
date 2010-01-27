@@ -13,6 +13,16 @@ static char help[] = "Solves a standard eigensystem Ax=kx with the matrix loaded
 #define min(a, b)       ((a) < (b) ? (a) : (b))
 
 
+
+typedef struct {
+  uint32_t minParticles, maxParticles, nParticles;
+  double minEnergy, maxEnergy, energyBinWidth;
+  uint32_t nEnergy;
+  double volume;
+  uint32_t outer_cols, outer_rows, inner_cols, inner_rows;
+} parq_info;
+
+
 #undef __FUNCT__
 #define __FUNCT__ "fakult"
 double fakult(int eingabe)
@@ -58,7 +68,7 @@ void vec_get_dist(Vec x,Vec y,PetscReal *max, PetscInt *max_elem) {
 
 #undef __FUNCT__
 #define __FUNCT__ "vec_to_file"
-void vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char *prefix) {
+void vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char *prefix, parq_info *info) {
   PetscInt       lrows, start_row, end_row, nEnergy, i, n, j;
   //PetscInt       rank;
   PetscScalar    *v0a;
@@ -80,7 +90,7 @@ void vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char *prefix) 
   
   PetscFOpen(PETSC_COMM_WORLD, filename, "w", &file);
   fak = 1.0;
-  nEnergy = 500;
+  nEnergy = info->nEnergy;
   for(i = 0; i < lrows; ++i) {
     n = (start_row+i)/(double)nEnergy+2;
     j = (start_row+i)-((n-2)*nEnergy);
@@ -91,74 +101,85 @@ void vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char *prefix) 
     }
     value = v0a[i];
     if(value > 0) {
-      PetscSynchronizedFPrintf(PETSC_COMM_WORLD, file, "%4d %12g %12g %12g %12g\n", n, (j*(10+700)/(double)(nEnergy)-700.0)+0.71, log(value) + fakln, log(value), value);
+      PetscSynchronizedFPrintf(PETSC_COMM_WORLD, file, "%4d %12g %12g %12g %12g\n", n, (j*(info->minEnergy-info->maxEnergy)/(double)(nEnergy)+info->minEnergy)+(info->energyBinWidth/2), log(value) + fakln, log(value), value);
     }
   }
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   PetscFClose(PETSC_COMM_WORLD, file);
   VecRestoreArray(u, &v0a);
 }
-
 #undef __FUNCT__
 #define __FUNCT__ "read_parq_matrix"
-PetscErrorCode read_parq_matrix(const char * filename, Mat *A) {
+PetscErrorCode read_parq_matrix(const char * filename, Mat *A, parq_info *info) {
   gzFile pf;
   int i,j,ni,nj;
-  PetscInt m,n;
-  uint32_t outer_cols, outer_rows, inner_cols, inner_rows;
-  uint32_t minParticles, maxParticles, nParticles, nEnergy;
-  double minEnergy, maxEnergy, energyBinWidth, volume;
+  PetscInt m,n, rank;
   double *data;
   PetscErrorCode ierr;
+  PetscFunctionBegin;
   
-  pf = gzopen(filename, "rb");
+  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
   
-  gzread(pf, (char*)&minParticles,   sizeof(minParticles));
-  gzread(pf, (char*)&maxParticles,   sizeof(maxParticles));
-  gzread(pf, (char*)&nParticles,     sizeof(nParticles));
-  gzread(pf, (char*)&minEnergy,      sizeof(minEnergy));
-  gzread(pf, (char*)&maxEnergy,      sizeof(maxEnergy));
-  gzread(pf, (char*)&energyBinWidth, sizeof(energyBinWidth));
-  gzread(pf, (char*)&nEnergy,        sizeof(nEnergy));
-  gzread(pf, (char*)&volume,         sizeof(volume));
-  gzread(pf, (char*)&outer_cols,     sizeof(outer_cols));
-  gzread(pf, (char*)&outer_rows,     sizeof(outer_rows));
-  gzread(pf, (char*)&inner_cols,     sizeof(inner_cols));
-  gzread(pf, (char*)&inner_rows,     sizeof(inner_rows));
+  if(!rank) {
+    pf = gzopen(filename, "rb");
+    
+    gzread(pf, (char*)&(info->minParticles),   sizeof(info->minParticles));
+    gzread(pf, (char*)&(info->maxParticles),   sizeof(info->maxParticles));
+    gzread(pf, (char*)&(info->nParticles),     sizeof(info->nParticles));
+    gzread(pf, (char*)&(info->minEnergy),      sizeof(info->minEnergy));
+    gzread(pf, (char*)&(info->maxEnergy),      sizeof(info->maxEnergy));
+    gzread(pf, (char*)&(info->energyBinWidth), sizeof(info->energyBinWidth));
+    gzread(pf, (char*)&(info->nEnergy),        sizeof(info->nEnergy));
+    gzread(pf, (char*)&(info->volume),         sizeof(info->volume));
+    gzread(pf, (char*)&(info->outer_cols),     sizeof(info->outer_cols));
+    gzread(pf, (char*)&(info->outer_rows),     sizeof(info->outer_rows));
+    gzread(pf, (char*)&(info->inner_cols),     sizeof(info->inner_cols));
+    gzread(pf, (char*)&(info->inner_rows),     sizeof(info->inner_rows));
+  }
+  MPI_Bcast(info, sizeof(parq_info), MPI_CHAR, 0, PETSC_COMM_WORLD);
   // create Matrix
-  ierr = MatCreateSeqAIJ(PETSC_COMM_WORLD,outer_rows*inner_rows,outer_cols*inner_cols,1000,0,A);CHKERRQ(ierr);
-  data = malloc(sizeof(double)*inner_rows*inner_cols);
+  ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,info->outer_rows*info->inner_rows,info->outer_cols*info->inner_cols,500,PETSC_NULL,500,PETSC_NULL,A);
+  //ierr = MatCreateSeqAIJ(PETSC_COMM_WORLD,info->outer_rows*info->inner_rows,info->outer_cols*info->inner_cols,1000,0,A);CHKERRQ(ierr);
+  //ierr = MatSetOption(*A, MAT_USE_HASH_TABLE, PETSC_TRUE);CHKERRQ(ierr);
+  data = malloc(sizeof(double)*info->inner_rows*info->inner_cols);
   
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Matrix Informationen:\nSize: %d*%d X %d*%d\n", outer_rows, inner_rows, outer_cols, inner_cols);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"System:\n  Particles: %d - %d | %d\n", minParticles, maxParticles, nParticles);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"  Energy   : %f - %f | %d | %f\n", minEnergy, maxEnergy, nEnergy, energyBinWidth);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"  Volume   : %f\n", volume);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"Matrix Informationen:\nSize: %d*%d X %d*%d\n", info->outer_rows, info->inner_rows, info->outer_cols, info->inner_cols);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"System:\n  Particles: %d - %d | %d\n", info->minParticles, info->maxParticles, info->nParticles);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"  Energy   : %f - %f | %d | %f\n", info->minEnergy, info->maxEnergy, info->nEnergy, info->energyBinWidth);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"  Volume   : %f\n", info->volume);CHKERRQ(ierr);
   
-  for (ni = 0; ni < (int)(outer_cols); ++ni) {
-    for (nj = max(ni-1, 0);
-         nj < min(ni+2, (int)(outer_rows));
-         ++nj)
-    {
-      gzread(pf, (char*)data, sizeof(double)*inner_rows*inner_cols);
-      for(i = 0; i < inner_rows; ++i) {
-        for(j = 0; j < inner_cols; ++j)
-        {
-          if(data[i*inner_rows+j] > 0) {
-            m = inner_rows*nj+j;
-            n = inner_cols*ni+i;
-            ierr = MatSetValues(*A,1,&n,1,&m,&(data[i*inner_rows+j]),INSERT_VALUES);CHKERRQ(ierr);
+  if(!rank) {
+    for (ni = 0; ni < (int)(info->outer_cols); ++ni) {
+      for (nj = max(ni-1, 0);
+           nj < min(ni+2, (int)(info->outer_rows));
+           ++nj)
+      {
+        if(!rank) {
+          gzread(pf, (char*)data, sizeof(double)*info->inner_rows*info->inner_cols);
+        }
+        //if(ni*info->inner_cols) {
+        //  
+        //}
+        for(i = 0; i < info->inner_rows; ++i) {
+          for(j = 0; j < info->inner_cols; ++j)
+          {
+            if(data[i*info->inner_rows+j] > 0) {
+              m = info->inner_rows*nj+j;
+              n = info->inner_cols*ni+i;
+              ierr = MatSetValue(*A,n,m,(data[i*info->inner_rows+j]),INSERT_VALUES);CHKERRQ(ierr);
+            }
           }
         }
       }
     }
   }
   ierr = MatAssemblyBegin(*A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  free(data);
-  gzclose(pf);
   ierr = MatAssemblyEnd(*A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatCompress(*A);CHKERRQ(ierr);
-  
-  return 0;
+  free(data);
+  if(!rank) {
+    gzclose(pf);
+  }
+  PetscFunctionReturn(0);
 }
 
 #undef __FUNCT__
@@ -171,11 +192,13 @@ int main( int argc, char **argv )
   char        	 filename[256];
   //PetscViewer 	 viewer;
   PetscTruth  	 flg;
-  PetscInt       i,/*j,*/cols, rows, /*n, nEnergy, */lcols, lrows, /*start_row, end_row, */plot_every, max_iter,rank, dist_elem;
+  PetscInt       i,/*j,*/cols, rows, /*n, nEnergy, */lcols, lrows, /*start_row, end_row, */plot_every, max_iter,rank, dist_elem, size;
   PetscReal      norm, /*fak, fakln, value,*/ dist;
   PetscScalar    lambda, residual/*, *v0a*/;
   PetscLogDouble v1,v2;
   MatInfo        info;
+  parq_info      pq_info;
+  
   //FILE* file;
 
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -195,9 +218,10 @@ int main( int argc, char **argv )
   }
   
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-  if(rank == 0) {
-    ierr = read_parq_matrix(filename, &A);CHKERRQ(ierr);
-  }
+  MPI_Comm_size(PETSC_COMM_WORLD, &size);
+  ierr = PetscSynchronizedPrintf(PETSC_COMM_WORLD,"[%d] MPI_COMM_size: %d\n", rank, size);CHKERRQ(ierr);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  ierr = read_parq_matrix(filename, &A, &pq_info);CHKERRQ(ierr);
   MPI_Barrier(PETSC_COMM_WORLD);
   ierr = MatGetInfo(A, MAT_GLOBAL_SUM, &info);CHKERRQ(ierr);
   //ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,filename,FILE_MODE_READ,&viewer);CHKERRQ(ierr);
@@ -237,8 +261,8 @@ int main( int argc, char **argv )
     //VecMaxPointwiseDivide(b,u,&dist);
     if(i % plot_every == 0) {
       vec_get_dist(b, u, &dist, &dist_elem);
-      vec_to_file(u, i, dist, NULL);
-      vec_to_file(b, i, dist, "err");
+      vec_to_file(u, i, dist, NULL, &pq_info);
+      vec_to_file(b, i, dist, "err", &pq_info);
       PetscGetTime(&v2);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"%10d: Norm: %12g r: %12g lambda: %12g dist: %12g (%6d) i/s: %8.4f\n", i, norm, residual, lambda, fabs(dist), dist_elem, plot_every/(v2-v1));CHKERRQ(ierr);
       v1 = v2;
@@ -247,7 +271,7 @@ int main( int argc, char **argv )
       break;
     }
   }
-  vec_to_file(u, i, dist, NULL);
+  vec_to_file(u, i, dist, NULL, &pq_info);
     
   /* 
      Free work space
