@@ -1,5 +1,5 @@
 
-ALL: ex2 
+ALL: power
 CFLAGS = -O3
 FFLAGS = 
 CPPFLAGS = -O3
