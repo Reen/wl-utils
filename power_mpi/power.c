@@ -101,7 +101,7 @@ void vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char *prefix, 
     }
     value = v0a[i];
     if(value > 0) {
-      PetscSynchronizedFPrintf(PETSC_COMM_WORLD, file, "%4d %12g %12g %12g %12g\n", n, (j*(info->minEnergy-info->maxEnergy)/(double)(nEnergy)+info->minEnergy)+(info->energyBinWidth/2), log(value) + fakln, log(value), value);
+      PetscSynchronizedFPrintf(PETSC_COMM_WORLD, file, "%4d %12g %12.12g %12.12g %12.12g\n", n, (j*(info->maxEnergy-info->minEnergy)/(double)(nEnergy)+info->minEnergy)+(info->energyBinWidth/2), log(value) + fakln, log(value), value);
     }
   }
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
@@ -198,8 +198,6 @@ int main( int argc, char **argv )
   PetscLogDouble v1,v2;
   MatInfo        info;
   parq_info      pq_info;
-  
-  //FILE* file;
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -215,6 +213,9 @@ int main( int argc, char **argv )
   ierr = PetscOptionsGetInt(PETSC_NULL,"-max_iter",&max_iter,&flg);CHKERRQ(ierr);
   if(!flg) {
     max_iter = 200000;
+  }
+  if(sizeof(PetscReal) != sizeof(double)) {
+    SETERRQ(1,"Please use double precision.\n");
   }
   
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
