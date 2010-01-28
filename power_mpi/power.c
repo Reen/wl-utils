@@ -67,28 +67,55 @@ void vec_get_dist(Vec x,Vec y,PetscReal *max, PetscInt *max_elem) {
 }
 
 #undef __FUNCT__
+#define __FUNCT__ "fprintf_dos_file"
+PetscErrorCode fprintf_dos_file(FILE* file, PetscInt n, PetscReal energy, PetscReal value, PetscReal fakln) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = PetscSynchronizedFPrintf(PETSC_COMM_WORLD, file, "%4d %12g %20.12g %20.12g %20.12g\n", n, energy, log(value) + fakln, log(value), value);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+#undef __FUNCT__
+#define __FUNCT__ "fprintf_err_file"
+PetscErrorCode fprintf_err_file(FILE* file, PetscInt n, PetscReal energy, PetscReal value, PetscReal fakln) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = PetscSynchronizedFPrintf(PETSC_COMM_WORLD, file, "%4d %12g %20.12g\n", n, energy, value);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+typedef PetscErrorCode(*formatting_func)(FILE*, PetscInt, PetscReal, PetscReal, PetscReal);
+
+#undef __FUNCT__
 #define __FUNCT__ "vec_to_file"
-void vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char *prefix, parq_info *info) {
+PetscErrorCode vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char *prefix, parq_info *info) {
   PetscInt       lrows, start_row, end_row, nEnergy, i, n, j;
-  //PetscInt       rank;
+  PetscInt       rank;
   PetscScalar    *v0a;
   PetscReal      fak, fakln, value;
   FILE *         file;
   char filename[100];
+  formatting_func ffunc;
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
 
-  //MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
   VecGetLocalSize(u,&lrows);
   VecGetOwnershipRange(u, &start_row, &end_row);
-  //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"[%d] local row start / end: %d %d\n", rank, start_row, end_row);
-  //PetscSynchronizedFlush(PETSC_COMM_WORLD);
   VecGetArray(u,&v0a);
   if(prefix == NULL) {
     PetscSNPrintf(filename, 100, "%s.%06d_%.6g.dat", "pet", iteration, dist);
+    ffunc = &fprintf_dos_file;
   } else {
     PetscSNPrintf(filename, 100, "%s.%06d_%.6g.dat", prefix, iteration, dist);
+    ffunc = &fprintf_err_file;
   }
   
-  PetscFOpen(PETSC_COMM_WORLD, filename, "w", &file);
+  ierr = PetscFOpen(PETSC_COMM_WORLD, filename, "w", &file);CHKERRQ(ierr);
+  if(!rank) {
+    // print a comment line to invoke fprintf at lease once on the first processor
+    ierr = PetscSynchronizedFPrintf(PETSC_COMM_WORLD, file, "#\n");CHKERRQ(ierr);
+  }
   fak = 1.0;
   nEnergy = info->nEnergy;
   for(i = 0; i < lrows; ++i) {
@@ -101,13 +128,15 @@ void vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char *prefix, 
     }
     value = v0a[i];
     if(value > 0) {
-      PetscSynchronizedFPrintf(PETSC_COMM_WORLD, file, "%4d %12g %12.12g %12.12g %12.12g\n", n, (j*(info->maxEnergy-info->minEnergy)/(double)(nEnergy)+info->minEnergy)+(info->energyBinWidth/2), log(value) + fakln, log(value), value);
+      ierr = (*ffunc)(file, n, (j*(info->maxEnergy-info->minEnergy)/(double)(nEnergy)+info->minEnergy)+(info->energyBinWidth/2), value, fakln);
     }
   }
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   PetscFClose(PETSC_COMM_WORLD, file);
   VecRestoreArray(u, &v0a);
+  PetscFunctionReturn(0);
 }
+
 #undef __FUNCT__
 #define __FUNCT__ "read_parq_matrix"
 PetscErrorCode read_parq_matrix(const char * filename, Mat *A, parq_info *info) {
@@ -157,9 +186,6 @@ PetscErrorCode read_parq_matrix(const char * filename, Mat *A, parq_info *info) 
         if(!rank) {
           gzread(pf, (char*)data, sizeof(double)*info->inner_rows*info->inner_cols);
         }
-        //if(ni*info->inner_cols) {
-        //  
-        //}
         for(i = 0; i < info->inner_rows; ++i) {
           for(j = 0; j < info->inner_cols; ++j)
           {
