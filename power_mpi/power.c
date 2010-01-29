@@ -264,16 +264,15 @@ int main( int argc, char **argv )
   char        	 filename[256];
   //PetscViewer 	 viewer;
   PetscTruth  	 flg;
-  PetscInt       i,/*j,*/cols, rows, /*n, nEnergy, */lcols, lrows, /*start_row, end_row, */plot_every, max_iter,rank, dist_elem, size;
-  PetscReal      norm, /*fak, fakln, value,*/ dist;
-  PetscScalar    lambda, residual/*, *v0a*/;
+  PetscInt       i, cols, rows, lcols, lrows, plot_every, max_iter,rank, dist_elem, size;
+  PetscReal      norm, dist;
+  PetscScalar    lambda, residual;
   PetscLogDouble v1,v2;
   MatInfo        info;
   parq_info      pq_info;
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  //ierr = PetscPrintf(PETSC_COMM_WORLD,"\nEigenproblem stored in file.\n\n");CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL,"-file",filename,256,&flg);CHKERRQ(ierr);
   if (!flg) {
     SETERRQ(1,"Must indicate a file name with the -file option.");
@@ -290,34 +289,39 @@ int main( int argc, char **argv )
     SETERRQ(1,"Please use double precision.\n");
   }
   
+  // print MPI rank & size
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
   MPI_Comm_size(PETSC_COMM_WORLD, &size);
   ierr = PetscSynchronizedPrintf(PETSC_COMM_WORLD,"[%d] MPI_COMM_size: %d\n", rank, size);CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
+
+  // read in our matrix
   ierr = read_parq_matrix(filename, &A, &pq_info);CHKERRQ(ierr);
-  MPI_Barrier(PETSC_COMM_WORLD);
-  ierr = MatGetInfo(A, MAT_GLOBAL_SUM, &info);CHKERRQ(ierr);
-  //ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,filename,FILE_MODE_READ,&viewer);CHKERRQ(ierr);
-  //ierr = MatLoad(viewer,MATAIJ,&A);CHKERRQ(ierr);
-  //ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
+
+  // create vectors from distributed matrix to achieve similar distribution
   ierr = MatGetVecs(A,&x,PETSC_NULL);CHKERRQ(ierr);
   ierr = MatGetVecs(A,&u,PETSC_NULL);CHKERRQ(ierr);
   ierr = MatGetVecs(A,&b,PETSC_NULL);CHKERRQ(ierr);
   ierr = MatGetVecs(A,&d,PETSC_NULL);CHKERRQ(ierr);
   ierr = MatGetSize(A, &cols, &rows);CHKERRQ(ierr);
   ierr = MatGetLocalSize(A, &lcols, &lrows);CHKERRQ(ierr);
+
+  // print some matrix statistics
+  ierr = MatGetInfo(A, MAT_GLOBAL_SUM, &info);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Matrix Size: %d %d nonzero: %.0f fill-ratio: %f\n", cols, rows, info.nz_used, (info.nz_used/cols/rows)*100.0);CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(PETSC_COMM_WORLD,"[%d] Matrix Size (local): %d %d\n", rank, lcols, lrows);CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
+
+  // prepare vectors
   ierr = VecSet(u, 1.0/rows);CHKERRQ(ierr);
   ierr = VecSet(b, 0.0);CHKERRQ(ierr);
   ierr = VecSet(x, 0.0);CHKERRQ(ierr);
   ierr = VecSet(d, 0.0);CHKERRQ(ierr);
-  
+ 
   i=0;
   dist = 1;
   PetscGetTime(&v1);
-  //for(i = 0; i < max_iter; ++i) {
+  // do power iteration
   while(dist > 1e-10) {
     i++;
     VecCopy(u, b);
@@ -337,9 +341,9 @@ int main( int argc, char **argv )
       PetscGetTime(&v2);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"%10d: Norm: %12g r: %12g lambda: %12g dist: %12g (%6d) i/s: %8.4f\n", i, norm, residual, lambda, fabs(dist), dist_elem, plot_every/(v2-v1));CHKERRQ(ierr);
       v1 = v2;
-    }
-    if(i >= max_iter) {
-      break;
+      if(i >= max_iter) {
+        break;
+      }
     }
   }
   vec_to_file(u, i, dist, NULL, &pq_info);
