@@ -208,6 +208,52 @@ PetscErrorCode read_parq_matrix(const char * filename, Mat *A, parq_info *info) 
   PetscFunctionReturn(0);
 }
 
+/**
+ * own normalization function that does norm1 with real division and not
+ * by reciprocal multiplication
+ * input y
+ * output x
+ * ouput ret_norm
+ */
+#undef __FUNCT__
+#define __FUNCT__ "power_norm"
+PetscErrorCode power_norm(Vec x, Vec y, PetscReal *ret_norm) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  PetscInt x_local_rows, y_local_rows, x_start_row, x_end_row, y_start_row, y_end_row, i;
+  PetscReal norm, all_norm;
+  ierr = VecGetLocalSize(x,&x_local_rows);CHKERRQ(ierr);
+  ierr = VecGetLocalSize(y,&y_local_rows);CHKERRQ(ierr);
+  ierr = VecGetOwnershipRange(x, &x_start_row, &x_end_row);CHKERRQ(ierr);
+  ierr = VecGetOwnershipRange(y, &y_start_row, &y_end_row);CHKERRQ(ierr);
+  PetscScalar *xa, *ya;
+  if(x_local_rows != y_local_rows || x_start_row != y_start_row || x_start_row != y_start_row) {
+    (*PetscErrorPrintf)("Error! Local vectors do not have equal settings: %d %d | %d %d | %d %d\n", x_local_rows, y_local_rows, x_start_row, y_start_row, x_start_row, y_start_row);
+  }
+  ierr = VecGetArray(x,&xa);CHKERRQ(ierr);
+  ierr = VecGetArray(y,&ya);CHKERRQ(ierr);
+  norm = 0;
+  for(i = 0; i < y_local_rows; ++i) {
+    __builtin_prefetch(ya+i+1,0);
+    norm += ya[i];
+  }
+  //ierr = PetscSynchronizedPrintf(PETSC_COMM_WORLD,"norm: %g\n", norm);CHKERRQ(ierr);
+  //PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  MPI_Allreduce(&norm, &all_norm, 1, MPI_DOUBLE, MPI_SUM, PETSC_COMM_WORLD);
+  //ierr = PetscSynchronizedPrintf(PETSC_COMM_WORLD,"all_norm: %g\n", norm);CHKERRQ(ierr);
+  //PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  norm = all_norm;
+  for(i = 0; i < y_local_rows; ++i) {
+    __builtin_prefetch(xa+i+1,1);
+    __builtin_prefetch(ya+i+1,0);
+    xa[i] = ya[i] / norm;
+  }
+  ierr = VecRestoreArray(x, &xa);CHKERRQ(ierr);
+  ierr = VecRestoreArray(y, &ya);CHKERRQ(ierr);
+  *ret_norm = norm;
+  PetscFunctionReturn(0);
+}
+
 #undef __FUNCT__
 #define __FUNCT__ "main"
 int main( int argc, char **argv )
@@ -281,10 +327,8 @@ int main( int argc, char **argv )
       VecAYPX(u, -lambda, x);
       VecNorm(u, NORM_2, &residual);
     }
-    VecCopy(x, u);
-    VecNorm(u, NORM_1, &norm);
-    VecScale(u, 1.0/norm);
-    
+    power_norm(u, x, &norm);
+
     //VecMaxPointwiseDivide(b,u,&dist);
     if(i % plot_every == 0) {
       vec_get_dist(b, u, &dist, &dist_elem);
