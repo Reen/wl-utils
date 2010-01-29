@@ -1,6 +1,6 @@
 
 ALL: power
-CFLAGS = -O3
+CFLAGS = -O3 -msse -msse2 -march=i686
 FFLAGS = 
 CPPFLAGS = -O3
 FPPFLAGS = 
