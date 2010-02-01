@@ -167,9 +167,8 @@ PetscErrorCode read_parq_matrix(const char * filename, Mat *A, parq_info *info) 
   }
   MPI_Bcast(info, sizeof(parq_info), MPI_CHAR, 0, PETSC_COMM_WORLD);
   // create Matrix
-  ierr = MatCreateMPIAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,info->outer_rows*info->inner_rows,info->outer_cols*info->inner_cols,500,PETSC_NULL,500,PETSC_NULL,A);
-  //ierr = MatCreateSeqAIJ(PETSC_COMM_WORLD,info->outer_rows*info->inner_rows,info->outer_cols*info->inner_cols,1000,0,A);CHKERRQ(ierr);
-  //ierr = MatSetOption(*A, MAT_USE_HASH_TABLE, PETSC_TRUE);CHKERRQ(ierr);
+  ierr = MatCreateMPIBAIJ(PETSC_COMM_WORLD,2,PETSC_DECIDE,PETSC_DECIDE,info->outer_rows*info->inner_rows,info->outer_cols*info->inner_cols,(int)(info->inner_rows/2.0),PETSC_NULL,(int)(info->inner_rows/2.0),PETSC_NULL,A);
+  ierr = MatSetOption(*A, MAT_USE_HASH_TABLE, PETSC_TRUE);CHKERRQ(ierr);
   data = malloc(sizeof(double)*info->inner_rows*info->inner_cols);
   
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Matrix Informationen:\nSize: %d*%d X %d*%d\n", info->outer_rows, info->inner_rows, info->outer_cols, info->inner_cols);CHKERRQ(ierr);
