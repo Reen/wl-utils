@@ -142,7 +142,7 @@ PetscErrorCode vec_to_file(Vec u, PetscInt iteration, PetscReal dist, const char
 PetscErrorCode read_parq_matrix(const char * filename, Mat *A, parq_info *info) {
   gzFile pf;
   int i,j,ni,nj;
-  PetscInt m,n, rank;
+  PetscInt m,n, rank, nonz;
   double *data;
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -176,22 +176,23 @@ PetscErrorCode read_parq_matrix(const char * filename, Mat *A, parq_info *info) 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"  Energy   : %f - %f | %d | %f\n", info->minEnergy, info->maxEnergy, info->nEnergy, info->energyBinWidth);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"  Volume   : %f\n", info->volume);CHKERRQ(ierr);
   
+  nonz = 0;
   if(!rank) {
-    for (ni = 0; ni < (int)(info->outer_cols); ++ni) {
-      for (nj = max(ni-1, 0);
-           nj < min(ni+2, (int)(info->outer_rows));
-           ++nj)
+    for (nj = 0; nj < (int)(info->outer_cols); ++nj) {
+      for (ni = max(nj-1, 0);
+           ni < min(nj+2, (int)(info->outer_rows));
+           ++ni)
       {
         if(!rank) {
           gzread(pf, (char*)data, sizeof(double)*info->inner_rows*info->inner_cols);
         }
         for(i = 0; i < info->inner_rows; ++i) {
-          for(j = 0; j < info->inner_cols; ++j)
-          {
+          for(j = 0; j < info->inner_cols; ++j) {
             if(data[i*info->inner_rows+j] > 0) {
               m = info->inner_rows*nj+j;
               n = info->inner_cols*ni+i;
               ierr = MatSetValue(*A,n,m,(data[i*info->inner_rows+j]),INSERT_VALUES);CHKERRQ(ierr);
+              nonz++;
             }
           }
         }
@@ -204,6 +205,7 @@ PetscErrorCode read_parq_matrix(const char * filename, Mat *A, parq_info *info) 
   if(!rank) {
     gzclose(pf);
   }
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"nonzero entries (real): %d\n", nonz);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -307,7 +309,7 @@ int main( int argc, char **argv )
 
   // print some matrix statistics
   ierr = MatGetInfo(A, MAT_GLOBAL_SUM, &info);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Matrix Size: %d %d nonzero: %.0f fill-ratio: %f\n", cols, rows, info.nz_used, (info.nz_used/cols/rows)*100.0);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"Matrix Size: %d %d nonzero entries (blocks): %.0f fill-ratio: %f\n", cols, rows, info.nz_used, (info.nz_used/cols/rows)*100.0);CHKERRQ(ierr);
   ierr = PetscSynchronizedPrintf(PETSC_COMM_WORLD,"[%d] Matrix Size (local): %d %d\n", rank, lcols, lrows);CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
