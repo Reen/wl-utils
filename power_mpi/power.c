@@ -7,6 +7,7 @@ static char help[] = "Solves a standard eigensystem Ax=kx with the matrix loaded
 #include "petscvec.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <zlib.h>
 
 #define max(a, b)       ((a) > (b) ? (a) : (b))
@@ -244,10 +245,14 @@ PetscErrorCode power_norm(Vec x, Vec y, PetscReal *ret_norm) {
   //ierr = PetscSynchronizedPrintf(PETSC_COMM_WORLD,"all_norm: %g\n", norm);CHKERRQ(ierr);
   //PetscSynchronizedFlush(PETSC_COMM_WORLD);
   norm = all_norm;
-  for(i = 0; i < y_local_rows; ++i) {
-    __builtin_prefetch(xa+i+1,1);
-    __builtin_prefetch(ya+i+1,0);
-    xa[i] = ya[i] / norm;
+  if(norm != 1.0) {
+    for(i = 0; i < y_local_rows; ++i) {
+      __builtin_prefetch(xa+i+1,1);
+      __builtin_prefetch(ya+i+1,0);
+      xa[i] = ya[i] / norm;
+    }
+  } else {
+    memcpy(xa,ya,y_local_rows*sizeof(PetscReal));
   }
   ierr = VecRestoreArray(x, &xa);CHKERRQ(ierr);
   ierr = VecRestoreArray(y, &ya);CHKERRQ(ierr);
