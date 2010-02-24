@@ -32,15 +32,16 @@ public:
   
   gzFile read_file(const std::string &filename,
                    std::size_t N = std::numeric_limits<std::size_t>::max(),
-                   std::size_t Nskip = 0) {
+                   std::size_t Nskip = 0,
+                   const std::string &filename_cb) {
     gzFile file = gzopen(filename.c_str(), "r");
-    return read_file_(file, N, Nskip);
+    return read_file_(file, N, Nskip, filename_cb);
   }
 
   gzFile read_file(gzFile file,
                    std::size_t N = std::numeric_limits<std::size_t>::max(),
                    std::size_t Nskip = 0) {
-    return read_file_(file, N, Nskip);
+    return read_file_(file, N, Nskip, "");
   }
 
   void print(std::string file) const {
@@ -80,14 +81,14 @@ public:
 private:
   class TransformToStochastic {
   private:
-    int_q_matrix_t *const int_m_;
+    matrix_t *const int_m_;
     matrix_t *const float_m_;
     std::size_t outer_cols_;
     std::size_t outer_rows_;
     std::size_t inner_cols_;
     std::size_t inner_rows_;
   public:
-    TransformToStochastic(int_q_matrix_t& int_m, matrix_t& float_m,
+    TransformToStochastic(matrix_t& int_m, matrix_t& float_m,
                           std::size_t outer_cols, std::size_t outer_rows,
                           std::size_t inner_cols, std::size_t inner_rows)
         : int_m_(&int_m), float_m_(&float_m),
@@ -95,7 +96,7 @@ private:
           inner_cols_(inner_cols), inner_rows_(inner_rows) {}
 
     void operator()(const tbb::blocked_range<std::size_t>& r) const {
-      int_q_matrix_t& int_m(*int_m_);
+      matrix_t& int_m(*int_m_);
       matrix_t& float_m(*float_m_);
       for (std::size_t ni = r.begin(); ni != r.end(); ++ni) {
         int s_ni = int(ni);
@@ -138,14 +139,27 @@ private:
     double E2;
   };
 
-  gzFile read_file_(gzFile file, std::size_t N, std::size_t Nskip) {
+  gzFile read_file_(gzFile file, std::size_t N, std::size_t Nskip, const std::string filename_cb) {
+    gzFile file_cb;
+    bool have_file_cb = false;
+    if(filename_cb != "") {
+      file_cb = gzopen(filename_cb.c_str(), "r");
+      if (gzeof(file_cb)) {
+        have_file_cb = true;
+      } else {
+        std::cout << "Could not read CB file.\n";
+      }
+    }
     // skip Nskip lines from the beginning
     if (Nskip > 0) {
       gzseek(file, 24*Nskip,SEEK_SET);
+      if (have_file_cb) {
+        gzseek(file_cb, 8*Nskip, SEEK_SET);
+      }
     }
 
     // create a unsinged matrix to operate on
-    int_q_matrix_t matrix;
+    matrix_t matrix;
     resize_matrix(matrix, outer_rows_, outer_cols_, inner_rows_, inner_cols_);
 
     int32_t N1, N2;
@@ -159,11 +173,15 @@ private:
       energyBinWidth = s->energy_bin_width();
     }
     binary_line bl;
+    double cb_weight = 1.0;
     boost::progress_display show_progress(N, std::cout, "Reading...\n");
     std::size_t skip_count(0);
     for(std::size_t i = 0; i < N && !gzeof(file); ++i) {
       ++show_progress;
       gzread(file, &bl, 24);
+      if (have_file_cb) {
+        gzread(file_cb, &cb_weight, 8);
+      }
       //std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << std::endl;
       std::size_t ni1 = bl.N1-minParticles;
       std::size_t ni2 = bl.N2-minParticles;
@@ -171,7 +189,7 @@ private:
         std::size_t i1 = static_cast<size_t>((bl.E1-minEnergy)/energyBinWidth);
         std::size_t i2 = static_cast<size_t>((bl.E2-minEnergy)/energyBinWidth);
         if (i1 < inner_cols && i2 < inner_rows) {
-          matrix(ni1,ni2)(i1,i2)++;
+          matrix(ni1,ni2)(i1,i2)+= cb_weight;
         } else {
           skip_count++;
 #ifndef NDEBUG
@@ -184,6 +202,9 @@ private:
         std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << "\n";
 #endif
       }
+    }
+    if (have_file_cb) {
+      gzclose(file_cb);
     }
     // create the stochastic matrix from the integer matrix
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0,outer_cols_),

@@ -9,13 +9,14 @@
 
 int main (int argc, char *argv[])
 {
-  std::string file, out_filename;
+  std::string file, out_filename, file_cb;
   std::size_t skip, read;
   try
   {
     using namespace boost::assign;
     TCLAP::CmdLine cmd("matrix_convert", ' ', "0.99");
-    TCLAP::UnlabeledValueArg<std::string> fileArg("file1","Filename of the first parQ dat file",true,"","filename", cmd);
+    TCLAP::UnlabeledValueArg<std::string> fileArg("file1","Filename of the parQ dat file",true,"","filename", cmd);
+    TCLAP::UnlabeledValueArg<std::string> file2Arg("file2","Filename of the parQ cb dat file",true,"","filename", cmd);
     TCLAP::ValueArg<std::size_t> nminArg("","nmin","Minimum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nmaxArg("","nmax","Maximum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nEnergyArg("","nEnergy","Number of Energy bins. = 500",false,500,"int", cmd);
@@ -30,6 +31,7 @@ int main (int argc, char *argv[])
     cmd.parse( argc, argv );
 
     file = fileArg.getValue();
+    file_cb = file2Arg.getValue();
     State::lease s;
     s->set_min_particles(nminArg.getValue());
     s->set_max_particles(nmaxArg.getValue());
@@ -56,7 +58,7 @@ int main (int argc, char *argv[])
   QMatrixConvertInterface qD(nParticles,nParticles,nEnergy,nEnergy);
 
   std::cerr << "reading " << file << std::endl;
-  gzFile parq_file_1 = qD.read_file(file, read, skip);
+  gzFile parq_file_1 = qD.read_file(file, read, skip, file_cb);
   gzclose(parq_file_1);
 
   std::cerr << "saving to " << out_filename << std::endl;
