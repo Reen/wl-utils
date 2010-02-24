@@ -58,7 +58,7 @@ int main (int argc, char *argv[])
   QMatrixConvertInterface qD(nParticles,nParticles,nEnergy,nEnergy);
 
   std::cerr << "reading " << file << std::endl;
-  gzFile parq_file_1 = qD.read_file(file, read, skip, file_cb);
+  gzFile parq_file_1 = qD.read_file(file, file_cb, read, skip);
   gzclose(parq_file_1);
 
   std::cerr << "saving to " << out_filename << std::endl;

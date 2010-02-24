@@ -31,9 +31,9 @@ public:
       : QMatrix(n1, n2, n3, n4) {}
   
   gzFile read_file(const std::string &filename,
+                   const std::string filename_cb,
                    std::size_t N = std::numeric_limits<std::size_t>::max(),
-                   std::size_t Nskip = 0,
-                   const std::string &filename_cb) {
+                   std::size_t Nskip = 0) {
     gzFile file = gzopen(filename.c_str(), "r");
     return read_file_(file, N, Nskip, filename_cb);
   }
@@ -103,7 +103,7 @@ private:
         std::cout << s_ni << std::endl;
         // minor column
         for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
-          std::size_t i_sum(0);
+          double i_sum(0);
           // major row
           for (std::size_t nj = std::max(s_ni-1, 0);
                nj < std::min(ni+2, outer_rows_);
