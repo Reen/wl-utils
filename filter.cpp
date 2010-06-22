@@ -143,7 +143,7 @@ int main (int argc, char const *argv[])
 	bool done = false;
 	
 	// Filestreams
-	boost::iostreams::filtering_ostream parq, data, output, data_hist;
+	boost::iostreams::filtering_ostream parq, data, output, data_hist, stat;
 	
 	// open file for parq-data with gzip comrpession
 	//parq.push(boost::iostreams::gzip_compressor());
@@ -152,6 +152,7 @@ int main (int argc, char const *argv[])
 	// open file for some statistical data
 	data.push(boost::iostreams::file_sink("wang_landau.dat"));
 	data_hist.push(boost::iostreams::file_sink("wang_landau_hist.dat"));
+	stat.push(boost::iostreams::file_sink("wang_landau_stat.dat"));
 	
 	// open file for output of towhee (compressed)
 	output.push(boost::iostreams::gzip_compressor());
@@ -191,8 +192,11 @@ int main (int argc, char const *argv[])
 				copy(line.begin()+8, line.end(), ostream_iterator<char>(data));
 				data << "\n";
 			} else if(line.compare(4,9,"data_hist") == 0) {
-				copy(line.begin()+13, line.end(), ostream_iterator<char>(data));
+				copy(line.begin()+13, line.end(), ostream_iterator<char>(data_hist));
 				data_hist << "\n";
+			} else if(line.compare(4,4,"stat") == 0) {
+				copy(line.begin()+13, line.end(), ostream_iterator<char>(stat));
+				stat << "\n";
 			} else if(line.compare(4,10,"matr_begin") == 0) {
 				output.flush();
 				unsigned int lines = 0;
