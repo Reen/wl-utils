@@ -143,7 +143,7 @@ int main (int argc, char const *argv[])
 	bool done = false;
 	
 	// Filestreams
-	boost::iostreams::filtering_ostream parq, data, output;
+	boost::iostreams::filtering_ostream parq, data, output, data_hist;
 	
 	// open file for parq-data with gzip comrpession
 	//parq.push(boost::iostreams::gzip_compressor());
@@ -151,6 +151,7 @@ int main (int argc, char const *argv[])
 	
 	// open file for some statistical data
 	data.push(boost::iostreams::file_sink("wang_landau.dat"));
+	data_hist.push(boost::iostreams::file_sink("wang_landau_hist.dat"));
 	
 	// open file for output of towhee (compressed)
 	output.push(boost::iostreams::gzip_compressor());
@@ -186,9 +187,12 @@ int main (int argc, char const *argv[])
 			if(line.compare(4,4,"parq") == 0) {
 				copy(line.begin()+8, line.end(), ostream_iterator<char>(parq));
 				parq << "\n";
-			} else if(line.compare(4,4,"data") == 0) {
+			} else if(line.compare(4,5,"data ") == 0) {
 				copy(line.begin()+8, line.end(), ostream_iterator<char>(data));
 				data << "\n";
+			} else if(line.compare(4,9,"data_hist") == 0) {
+				copy(line.begin()+13, line.end(), ostream_iterator<char>(data));
+				data_hist << "\n";
 			} else if(line.compare(4,10,"matr_begin") == 0) {
 				output.flush();
 				unsigned int lines = 0;
@@ -258,6 +262,38 @@ int main (int argc, char const *argv[])
 				histFile << "# timestep\t" << timestep << "\n# ln_f\t" << ln_f << "\n";
 				while(getline(cin, line)) {
 					if(line.compare(4,8,"hist_end") != 0) {
+						lines++;
+						histFile << line << "\n";
+					} else {
+						break;
+					}
+				}
+			} else if(line.compare(4,15,"hist_full_begin") == 0) {
+				unsigned int lines = 0;
+				unsigned int timestep;
+				double ln_f;
+				stringstream filename;
+				{
+					istringstream temp(line);
+					string temp_str;
+					temp >> temp_str;
+					temp >> timestep;
+					temp >> ln_f;
+					filename<< "hist_full_"
+							<< std::setw(15) << std::right << std::setfill('0') << timestep
+							<< "_"
+							<< ln_f
+							<< ".dat.bz2";
+				}
+				boost::iostreams::filtering_ostream histFile;
+				histFile.push(boost::iostreams::bzip2_compressor());
+				histFile.push(boost::iostreams::file_sink( (histPath / filename.str()).string() ));
+				//config_str.seekg(0, ios::beg);
+				//boost::iostreams::copy(config_str, histFile);
+				histFile << config_str;
+				histFile << "# timestep\t" << timestep << "\n# ln_f\t" << ln_f << "\n";
+				while(getline(cin, line)) {
+					if(line.compare(4,13,"hist_full_end") != 0) {
 						lines++;
 						histFile << line << "\n";
 					} else {
