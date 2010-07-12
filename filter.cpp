@@ -192,7 +192,7 @@ int main (int argc, char const *argv[])
 			} else if(line.compare(4,14,"data_hist_full") == 0) {
 				copy(line.begin()+18, line.end(), ostream_iterator<char>(data_hist_full));
 				data_hist_full << "\n";
-			} else if(line.compare(4,10,"data_hist") == 0) {
+			} else if(line.compare(4,9,"data_hist") == 0) {
 				copy(line.begin()+13, line.end(), ostream_iterator<char>(data_hist));
 				data_hist << "\n";
 			} else if(line.compare(4,4,"data") == 0) {
