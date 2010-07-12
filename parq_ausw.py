@@ -75,7 +75,7 @@ def main():
         process_wl_error(cwd+"/dos", cwd+'/wl_error.dat')
     for nread in range(100*refine_time, run_time+(100*refine_time), 100*refine_time):
         for nskip in range(0, run_time-nread+(100*refine_time), 100*refine_time):
-            matrix_file = parq_dir+('/mat_%09d_%09d.dat' % (nskip,nread))
+            matrix_file = parq_dir+('/mat_%09d_%09d.dat.gz' % (nskip,nread))
             workdir = parq_dir+('/work_%09d_%09d' % (nskip, nread))
             if not os.path.exists(matrix_file):
                 command = ("/cluster2/rhab/p/wl-utils/matrix_convert "
