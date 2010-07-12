@@ -17,7 +17,7 @@ row_length = 24
 
 def mat_get_header(infile, do_print = True):
     data = infile.read(48)
-    min_particles, max_particles, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume = struct.unpack("IIIdddId",data)
+    min_particles, max_particles, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume = struct.unpack("=IIIdddId",data)
     data = infile.read(16)
     outer_cols, outer_rows, inner_cols, inner_rows = struct.unpack("IIII",data)
     data = {
@@ -167,8 +167,6 @@ def timecorr(opts, infile, filename):
 
 def showmat(opts, infile, filename):
     settings = mat_get_header(infile)
-    outer_cols = settings["outer_cols"]
-    outer_rows = settings["outer_rows"]
     inner_cols = settings["inner_cols"]
     inner_rows = settings["inner_rows"]
     if(opts.submatrix):
@@ -245,7 +243,7 @@ def convertmat(opts, infile, filename):
     out4 = open("%s-eig-t.sparse" % (filename), "w")
     work = [{"out":out1, "fs":file_str_1, "count":count_mat}, {"out":out2, "fs":file_str_2, "count":count_mat}, {"out":out3, "fs":file_str_3, "count":count}, {"out":out4, "fs":file_str_4, "count":count}]
     for cur in work:
-        print "creating file %s" % (cur["out"].filename)
+        print "creating file %s" % (cur["out"].name)
         cur["out"].write("%%MatrixMarket matrix coordinate real general\n")
         cur["out"].write("%d %d %d\n" % (inner_cols*outer_cols, inner_rows*outer_rows, cur["count"]))
         cur["out"].write(cur["fs"].getvalue())
