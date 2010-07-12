@@ -771,7 +771,7 @@ public:
         for (std::size_t ei = 0; ei < inner_cols_; ++ei) {
           // minor row
           for (std::size_t ej = 0; ej < inner_rows_; ++ej) {
-            balance(ni,nj)(ei,ej) = q_matrix_(ni,nj)(ei,ej)*dos_matrix_(ni,ei) - q_matrix_(nj,ni)(ej,ei)*dos_matrix_(nj,ej);
+            balance(ni,nj)(ei,ej) = fabs(q_matrix_(ni,nj)(ei,ej)*dos_matrix_(ni,ei) - q_matrix_(nj,ni)(ej,ei)*dos_matrix_(nj,ej));
           }
         }
       }
