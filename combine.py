@@ -14,13 +14,13 @@ How it works:
 Limitations:
     - data files have to contain data marked up in columns
     - the columns must have a fixed width which may not vary between the
-      different files, but is allowed to vary between the differen columns
+      different files, but is allowed to vary between the different columns
     - the data inside the columns has to be right aligned
 
 Todo:
     - make it possible to work with left-aligned data by allowing the user to
       specify the column widths
-    - make it possible to work with comma seperated values
+    - make it possible to work with comma separated values
 """
 
 import os
