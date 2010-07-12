@@ -167,9 +167,16 @@ def timecorr(opts, infile, filename):
 
 def showmat(opts, infile, filename):
     settings = mat_get_header(infile)
-    infile.seek(330*inner_cols*inner_rows*8,os.SEEK_CUR)
+    outer_cols = settings["outer_cols"]
+    outer_rows = settings["outer_rows"]
+    inner_cols = settings["inner_cols"]
+    inner_rows = settings["inner_rows"]
+    if(opts.submatrix):
+        off_x,off_y = opts.submatrix.split(',')
+        subm = 2*int(off_x)+int(off_y)
+        infile.seek(subm*inner_cols*inner_rows*8,os.SEEK_CUR)
     data = infile.read(inner_cols*inner_rows*8)
-    arr = np.fromstring(data, dtype=float)
+    arr = np.fromstring(data, dtype=np.float64)
     min_arr = arr[arr!=0]
     if(len(min_arr) > 0):
         arr[arr==0] = min(min_arr)/10.0
@@ -177,7 +184,8 @@ def showmat(opts, infile, filename):
         matplotlib.rcParams['font.family'] = "serif"
         matplotlib.rcParams['font.serif'] = "Latin Modern Roman"
         matplotlib.rcParams['figure.figsize'] = 10,7
-    plt.matshow(np.reshape(arr, [inner_cols,inner_rows]), norm=matplotlib.colors.LogNorm(), origin='lower', extent=(min_energy, max_energy, min_energy, max_energy))
+    arr = np.reshape(arr, [inner_cols,inner_rows])
+    plt.matshow(arr, norm=matplotlib.colors.LogNorm(), origin='lower', extent=(settings["min_energy"], settings["max_energy"], settings["min_energy"], settings["max_energy"]))
     plt.colorbar()
     plt.xlabel("Energy from")
     plt.ylabel("Energy to")
@@ -251,7 +259,7 @@ def main(argv):
     opts.add_option('--bins', '-b', help="Number of bins", type="int")
     opts.add_option('--combine', '-c', help="Number of values to combine to one value", type="int")
     opts.add_option('--pdf', '', help="Create a PDF document instead of showing the graph.", action="store_true")
- 
+    opts.add_option('--submatrix', '', help="Submatrix to show. Default 0,0. ");
     options,arguments = opts.parse_args()
 
     command = 'show'
