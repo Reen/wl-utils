@@ -150,6 +150,12 @@ private:
   };
 
   gzFile read_file_(gzFile file, std::size_t N, std::size_t Nskip) {
+    int32_t N1, N2, current_line(0);
+    double E1, E2, minEnergy, energyBinWidth;
+    std::size_t outer_cols(matrix.size1()), outer_rows(matrix.size2());
+    std::size_t inner_cols(matrix(0,0).size1()), inner_rows(matrix(0,0).size2()), minParticles;
+    binary_line bl[100];
+
     // skip Nskip lines from the beginning
     if (Nskip > 0) {
       gzseek(file, 24*Nskip,SEEK_SET);
@@ -161,42 +167,44 @@ private:
       resize_matrix(matrix, outer_rows_, outer_cols_, inner_rows_, inner_cols_);
     }
 
-    int32_t N1, N2;
-    double E1, E2, minEnergy, energyBinWidth;
-    std::size_t outer_cols(matrix.size1()), outer_rows(matrix.size2());
-    std::size_t inner_cols(matrix(0,0).size1()), inner_rows(matrix(0,0).size2()), minParticles;
     {
       State::lease s;
       minParticles = s->min_particles();
       minEnergy = s->min_energy();
       energyBinWidth = s->energy_bin_width();
     }
-    binary_line bl;
     boost::progress_display show_progress(N, std::cout, "Reading...\n");
     std::size_t skip_count(0);
     for(std::size_t i = 0; i < N && !gzeof(file); ++i) {
       ++show_progress;
-      gzread(file, &bl, 24);
+      if(current_line == 100) {
+        if(gzread(file, &bl, 24*100) > 0) {
+          current_line = 0;
+        } else {
+          break;
+        }
+      }
       //std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << std::endl;
-      std::size_t ni1 = bl.N1-minParticles;
-      std::size_t ni2 = bl.N2-minParticles;
+      std::size_t ni1 = bl[current_line].N1-minParticles;
+      std::size_t ni2 = bl[current_line].N2-minParticles;
       if (ni1 < outer_cols && ni2 < outer_rows) {
-        std::size_t i1 = static_cast<size_t>((bl.E1-minEnergy)/energyBinWidth);
-        std::size_t i2 = static_cast<size_t>((bl.E2-minEnergy)/energyBinWidth);
+        std::size_t i1 = static_cast<size_t>((bl[current_line].E1-minEnergy)/energyBinWidth);
+        std::size_t i2 = static_cast<size_t>((bl[current_line].E2-minEnergy)/energyBinWidth);
         if (i1 < inner_cols && i2 < inner_rows) {
           matrix(ni1,ni2)(i1,i2)+= 1;
         } else {
           skip_count++;
 #ifndef NDEBUG
-          std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << "\n";
+          std::cout << bl[current_line].N1 << " " << bl[current_line].N2 << " " << bl[current_line].E1 << " " << bl[current_line].E2 << "\n";
 #endif
         }
       } else {
         skip_count++;
 #ifndef NDEBUG
-        std::cout << bl.N1 << " " << bl.N2 << " " << bl.E1 << " " << bl.E2 << "\n";
+        std::cout << bl[current_line].N1 << " " << bl[current_line].N2 << " " << bl[current_line].E1 << " " << bl[current_line].E2 << "\n";
 #endif
       }
+      ++current_line;
     }
     std::cout << "Skipped lines: " << skip_count << "\tRead lines: " << show_progress.count() << std::endl;
     return file;
