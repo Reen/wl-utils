@@ -132,8 +132,8 @@ def main(argv):
                 varianceAcc += (vvv*vvv)
                 count+=1
             if count >= required_points:
+                variance = (varianceAcc-(mean*mean)/count)/(count-1.0)
                 mean /= count
-                variance = varianceAcc/(count-1)-(mean*mean)
                 data[k] = [mean, variance]
                 #print '%10s%10s%20g%20g' % ( k,kk,mean,variance )
                 dataline += ('%20g%20g' % ( mean,variance ))
