@@ -9,14 +9,14 @@
 
 int main (int argc, char *argv[])
 {
-  std::string file, out_filename, file_cb;
+  std::string out_filename;//,file,file_cb;
   std::size_t skip, read;
+  std::vector<std::string> files;
   try
   {
     using namespace boost::assign;
     TCLAP::CmdLine cmd("matrix_convert", ' ', "0.99");
-    TCLAP::UnlabeledValueArg<std::string> fileArg("file1","Filename of the parQ dat file",true,"","filename", cmd);
-    TCLAP::UnlabeledValueArg<std::string> file2Arg("file2","Filename of the parQ cb dat file",true,"","filename", cmd);
+    TCLAP::UnlabeledMultiArg<std::string> fileArg("file1","Filenames of the parQ dat files",true,"filenames", cmd);
     TCLAP::ValueArg<std::size_t> nminArg("","nmin","Minimum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nmaxArg("","nmax","Maximum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nEnergyArg("","nEnergy","Number of Energy bins. = 500",false,500,"int", cmd);
@@ -30,8 +30,7 @@ int main (int argc, char *argv[])
 
     cmd.parse( argc, argv );
 
-    file = fileArg.getValue();
-    file_cb = file2Arg.getValue();
+    files = fileArg.getValue();
     State::lease s;
     s->set_min_particles(nminArg.getValue());
     s->set_max_particles(nmaxArg.getValue());
@@ -52,14 +51,14 @@ int main (int argc, char *argv[])
 
   std::size_t nParticles(State::instance->n_particles());
   std::size_t nEnergy(State::instance->n_energy());
-/*  QMatrix<uint32_t> q_m(nParticles,nParticles,nEnergy,nEnergy);
-  QMatrix<double> qD_m(nParticles,nParticles,nEnergy,nEnergy);
-  QMatrixConvertInterface< QMatrix<uint32_t> > q(q_m);*/
   QMatrixConvertInterface qD(nParticles,nParticles,nEnergy,nEnergy);
 
-  std::cerr << "reading " << file << std::endl;
-  gzFile parq_file_1 = qD.read_file(file, file_cb, read, skip);
-  gzclose(parq_file_1);
+  for(size_t i = 0; i < files.size(); ++i) {
+    std::cerr << "reading " << files[i] << std::endl;
+    gzFile parq_file_1 = qD.read_file(files[i], read, skip);
+    gzclose(parq_file_1);
+  }
+  qD.make_stochastic();
 
   std::cerr << "saving to " << out_filename << std::endl;
   io::filtering_ostream out;
