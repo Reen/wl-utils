@@ -141,6 +141,9 @@ int main (int argc, char const *argv[])
 	
 	string line;
 	bool done = false;
+
+	// last known timestep
+	int last_timestep = 0;
 	
 	// Filestreams
 	boost::iostreams::filtering_ostream parq, data, output, data_hist, stat, data_hist_full;
@@ -199,8 +202,24 @@ int main (int argc, char const *argv[])
 				copy(line.begin()+8, line.end(), ostream_iterator<char>(data));
 				data << "\n";
 			} else if(line.compare(4,4,"stat") == 0) {
-				copy(line.begin()+13, line.end(), ostream_iterator<char>(stat));
-				stat << "\n";
+				stats << last_timestep;
+				{
+					istringstream temp(line);
+					string temp_str;
+					int t1,t2,t3,t4,t5,t6;
+					temp >> temp_str; //stat
+					temp >> temp_str; //T:
+					temp >> t1 >> t2 >> t3;
+					temp >> temp_str; //S:
+					temp >> t4 >> t5 >> t6;
+					stats << std::setw(15) << std::right << t1;
+					stats << std::setw(15) << std::right << t2;
+					stats << std::setw(15) << std::right << t3;
+					stats << std::setw(15) << std::right << t4;
+					stats << std::setw(15) << std::right << t5;
+					stats << std::setw(15) << std::right << t6;
+				}
+				stats << "\n";
 			} else if(line.compare(4,10,"matr_begin") == 0) {
 				output.flush();
 				unsigned int lines = 0;
@@ -220,6 +239,7 @@ int main (int argc, char const *argv[])
 							<< "_"
 							<< ln_f
 							<< ".dat.bz2";
+					last_timestep = timestep;
 				}
 				boost::iostreams::filtering_ostream dosFile;
 				dosFile.push(boost::iostreams::bzip2_compressor());
@@ -260,6 +280,7 @@ int main (int argc, char const *argv[])
 							<< "_"
 							<< ln_f
 							<< ".dat.bz2";
+					last_timestep = timestep;
 				}
 				boost::iostreams::filtering_ostream histFile;
 				histFile.push(boost::iostreams::bzip2_compressor());
@@ -292,6 +313,7 @@ int main (int argc, char const *argv[])
 							<< "_"
 							<< ln_f
 							<< ".dat.bz2";
+					last_timestep = timestep;
 				}
 				boost::iostreams::filtering_ostream histFile;
 				histFile.push(boost::iostreams::bzip2_compressor());
