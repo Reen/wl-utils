@@ -1,3 +1,6 @@
+# bei Problemen mit nicht gefunden shared libraries folgendes bearchten!:
+# http://www.eyrie.org/~eagle/notes/rpath.html
+# export LD_RUN_PATH=/cluster/rhab/usr/lib
 macx-g++ {
 	INCLUDEPATH += /Users/rene/usr/include
 	LIBS        += -L/Users/rene/usr/lib
@@ -5,9 +8,9 @@ macx-g++ {
 }
 
 linux-g++-64 {
-	INCLUDEPATH += /cluster2/rhab/usr/include/boost-1_38
-	LIBS        += -L/cluster2/rhab/usr/lib
-	BOOST       ~= s/-l([a-z_]+)/-l\1-gcc41-mt/g
+	INCLUDEPATH += /cluster/rhab/usr/include
+	LIBS        += -L/cluster/rhab/usr/lib
+	#BOOST       ~= s/-l([a-z_]+)/-l\1-gcc41-mt/g
 }
 
 LIBS += $$BOOST
