@@ -140,16 +140,25 @@ int main (int argc, char const *argv[])
 	
 	string line;
 	bool done = false;
+
+	// last known timestep
+	int last_timestep = 0;
 	
 	// Filestreams
-	boost::iostreams::filtering_ostream parq, data, output;
+	boost::iostreams::filtering_ostream parq, data, output, stats, datahist;
 	
 	// open file for parq-data with gzip comrpession
-	parq.push(boost::iostreams::gzip_compressor());
-	parq.push(boost::iostreams::file_sink("parq.dat.gz"));
+	// parq.push(boost::iostreams::gzip_compressor());
+	// parq.push(boost::iostreams::file_sink("parq.dat.gz"));
 	
 	// open file for some statistical data
 	data.push(boost::iostreams::file_sink("wang_landau.dat"));
+
+	// open another file for statistical data
+	stats.push(boost::iostreams::file_sink("wl_stats.dat"));
+
+	// open file for some statistical data
+	datahist.push(boost::iostreams::file_sink("wang_landau_hist.dat"));
 	
 	// open file for output of towhee (compressed)
 	output.push(boost::iostreams::gzip_compressor());
@@ -182,12 +191,34 @@ int main (int argc, char const *argv[])
 	while(getline(cin, line)) {
 		unsigned int line_size = line.size();
 		if(line_size > 7 && line.compare(0,4," WL#") == 0) {
-			if(line.compare(4,4,"parq") == 0) {
+			/*if(line.compare(4,4,"parq") == 0) {
 				copy(line.begin()+8, line.end(), ostream_iterator<char>(parq));
 				parq << "\n";
+			} else*/ if(line.compare(4,9,"data_hist") == 0) {
+				copy(line.begin()+8, line.end(), ostream_iterator<char>(datahist));
+				datahist << "\n";
 			} else if(line.compare(4,4,"data") == 0) {
 				copy(line.begin()+8, line.end(), ostream_iterator<char>(data));
 				data << "\n";
+			} else if(line.compare(4,4,"stat") == 0) {
+				stats << last_timestep;
+				{
+					istringstream temp(line);
+					string temp_str;
+					int t1,t2,t3,t4,t5,t6;
+					temp >> temp_str; //stat
+					temp >> temp_str; //T:
+					temp >> t1 >> t2 >> t3;
+					temp >> temp_str; //S:
+					temp >> t4 >> t5 >> t6;
+					stats << std::setw(15) << std::right << t1;
+					stats << std::setw(15) << std::right << t2;
+					stats << std::setw(15) << std::right << t3;
+					stats << std::setw(15) << std::right << t4;
+					stats << std::setw(15) << std::right << t5;
+					stats << std::setw(15) << std::right << t6;
+				}
+				stats << "\n";
 			} else if(line.compare(4,10,"matr_begin") == 0) {
 				output.flush();
 				unsigned int lines = 0;
@@ -207,6 +238,7 @@ int main (int argc, char const *argv[])
 							<< "_"
 							<< ln_f
 							<< ".dat.gz";
+					last_timestep = timestep;
 				}
 				boost::iostreams::filtering_ostream dosFile;
 				dosFile.push(boost::iostreams::gzip_compressor());
@@ -247,6 +279,7 @@ int main (int argc, char const *argv[])
 							<< "_"
 							<< ln_f
 							<< ".dat.gz";
+					last_timestep = timestep;
 				}
 				boost::iostreams::filtering_ostream histFile;
 				histFile.push(boost::iostreams::gzip_compressor());
@@ -257,6 +290,39 @@ int main (int argc, char const *argv[])
 				histFile << "# timestep\t" << timestep << "\n# ln_f\t" << ln_f << "\n";
 				while(getline(cin, line)) {
 					if(line.compare(4,8,"hist_end") != 0) {
+						lines++;
+						histFile << line << "\n";
+					} else {
+						break;
+					}
+				}
+			} else if(line.compare(4,15,"hist_full_begin") == 0) {
+				unsigned int lines = 0;
+				unsigned int timestep;
+				double ln_f;
+				stringstream filename;
+				{
+					istringstream temp(line);
+					string temp_str;
+					temp >> temp_str;
+					temp >> timestep;
+					temp >> ln_f;
+					filename<< "hist_full_"
+							<< std::setw(15) << std::right << std::setfill('0') << timestep
+							<< "_"
+							<< ln_f
+							<< ".dat.gz";
+					last_timestep = timestep;
+				}
+				boost::iostreams::filtering_ostream histFile;
+				histFile.push(boost::iostreams::gzip_compressor());
+				histFile.push(boost::iostreams::file_sink( (histPath / filename.str()).string() ));
+				//config_str.seekg(0, ios::beg);
+				//boost::iostreams::copy(config_str, histFile);
+				histFile << config_str;
+				histFile << "# timestep\t" << timestep << "\n# ln_f\t" << ln_f << "\n";
+				while(getline(cin, line)) {
+					if(line.compare(4,13,"hist_full_end") != 0) {
 						lines++;
 						histFile << line << "\n";
 					} else {
