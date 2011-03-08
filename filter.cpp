@@ -202,7 +202,7 @@ int main (int argc, char const *argv[])
 				copy(line.begin()+8, line.end(), ostream_iterator<char>(data));
 				data << "\n";
 			} else if(line.compare(4,4,"stat") == 0) {
-				stats << last_timestep;
+				stat << last_timestep;
 				{
 					istringstream temp(line);
 					string temp_str;
@@ -211,15 +211,15 @@ int main (int argc, char const *argv[])
 					temp >> temp_str; //T:
 					temp >> t1 >> t2 >> t3;
 					temp >> temp_str; //S:
-					temp >> t4 >> t5 >> t6;
-					stats << std::setw(15) << std::right << t1;
-					stats << std::setw(15) << std::right << t2;
-					stats << std::setw(15) << std::right << t3;
-					stats << std::setw(15) << std::right << t4;
-					stats << std::setw(15) << std::right << t5;
-					stats << std::setw(15) << std::right << t6;
+					temp>> t4 >> t5 >> t6;
+					stat << std::setw(15) << std::right << t1;
+					stat << std::setw(15) << std::right << t2;
+					stat << std::setw(15) << std::right << t3;
+					stat << std::setw(15) << std::right << t4;
+					stat << std::setw(15) << std::right << t5;
+					stat << std::setw(15) << std::right << t6;
 				}
-				stats << "\n";
+				stat << "\n";
 			} else if(line.compare(4,10,"matr_begin") == 0) {
 				output.flush();
 				unsigned int lines = 0;
