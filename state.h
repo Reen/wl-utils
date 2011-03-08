@@ -113,6 +113,10 @@ public:
     max_particles_ = max_p;
     n_particles_ = n_p;
     n_energy_ = n_e;
+    std::cout << "settings: " << min_p << " " << max_p << " " << n_p << " "
+      << min_energy_ << " " << max_energy_ << " " << energy_bin_width_ << " "
+      << n_e << " "
+      << volume_ << std::endl;
     set_energy_bin_width();
   }
 };
