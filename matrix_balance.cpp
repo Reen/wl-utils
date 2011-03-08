@@ -11,6 +11,7 @@
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/filesystem.hpp>
 
 #include "q_matrix_balance_interface.h"
@@ -92,8 +93,19 @@ int main (int argc, char *argv[])
   QMatrixBalanceInterface qD;
   std::cerr << "reading " << file << std::endl;
   if(load_archive) {
+    char head[4], gzip[] = {0x1f, 0x8b, 0x08}, bzip[] = {0x42, 0x5A, 0x68};
+    {
+      // read first 3 bytes and check whether the file is uncompressed, gzip or bzip2 compressed.
+      FILE * test = fopen(file.c_str(), "rb");
+      fread(head, 1, 3, test);
+      fclose(test);
+    }
     io::filtering_istream in;
-    in.push(io::gzip_decompressor());
+    if (head[0] == gzip[0] && head[1] == gzip[1] && head[2] == gzip[2]) {
+      in.push(io::gzip_decompressor());
+    } else if (head[0] == bzip[0] && head[1] == bzip[1] && head[2] == bzip[2]) {
+      in.push(io::bzip2_decompressor());
+    }
     in.push(io::file_source(file, std::ios::binary|std::ios::in));
     State::lease s;
     s->load_from(in);
