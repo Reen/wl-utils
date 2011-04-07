@@ -13,6 +13,7 @@
 #include <boost/iostreams/filter/bzip2.hpp>
 namespace io = boost::iostreams;
 
+#define BOOST_FILESYSTEM_VERSION 2
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 namespace fs = boost::filesystem;

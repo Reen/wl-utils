@@ -2,10 +2,10 @@
 # http://www.eyrie.org/~eagle/notes/rpath.html
 # export LD_RUN_PATH=/cluster/rhab/usr/lib
 macx-g++ {
-	INCLUDEPATH += /Users/rene/usr/include
+	INCLUDEPATH += /Users/rhab/usr/include
 	INCLUDEPATH += /sw/include
-	LIBS        += -L/Users/rene/usr/lib -L/sw/lib
-	BOOST       ~= s/-l([a-z_]+)/-l\1-xgcc40-mt/g
+	LIBS        += -L/Users/rhab/usr/lib -L/sw/lib
+	#BOOST       ~= s/-l([a-z_]+)/-l\\1-xgcc40-mt/g
 }
 
 linux-g++-64 {
