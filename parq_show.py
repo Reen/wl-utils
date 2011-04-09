@@ -266,10 +266,14 @@ def main(argv):
         command,filename = arguments
 
 
-    infile = None
-    if filename[-2:] == 'gz':
+    infile = open(filename, "rb")
+    gziphead = ('\x1f', '\x8b', '\x08')
+    bziphead = ('\x42', '\x5A', '\x68')
+    test = struct.unpack('ccc', infile.read(3))
+    infile.close()
+    if test == gziphead:
         infile = gzip.open(filename, "rb")
-    elif filename[-3:] == 'bz2':
+    elif test == bziphead:
         infile = bz2.open(filename, "rb")
     else:
         infile = open(filename, "rb")
