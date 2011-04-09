@@ -8,3 +8,4 @@ matrix_tool
 matrix_tool_test
 *_debug
 *.o
+*.swp
