@@ -1,6 +1,8 @@
 #ifndef _STATE_H_
 #define _STATE_H_
 
+#include <stdexcept>
+
 #include "boost/filesystem.hpp"
 
 #include <boost/serialization/access.hpp>
@@ -89,6 +91,10 @@ public:
   void save_to(io::filtering_ostream &out) {
     uint32_t min_p(min_particles_), max_p(max_particles_);
     uint32_t n_p(n_particles_), n_e(n_energy_);
+    std::size_t version = 1;
+    std::size_t type = 2;
+    out.write((char*)&version,sizeof(version));
+    out.write((char*)&type,sizeof(type));
     out.write((char*)&min_p,sizeof(min_p));
     out.write((char*)&max_p,sizeof(max_p));
     out.write((char*)&n_p,sizeof(n_p));
@@ -100,7 +106,16 @@ public:
   }
 
   void load_from(io::filtering_istream &in) {
-    uint32_t min_p, max_p, n_p, n_e;
+    uint32_t min_p, max_p, n_p, n_e, version, type;
+    in.read((char*)&version,sizeof(version));
+    if (version != 1) {
+      throw std::runtime_error("Unknown parq matrix file version.");
+    }
+    in.read((char*)&type,sizeof(type));
+    if (type != 2) {
+      throw std::runtime_error("This program expects double precision matrices.");
+    }
+    in.read((char*)&min_p,sizeof(min_p));
     in.read((char*)&min_p,sizeof(min_p));
     in.read((char*)&max_p,sizeof(max_p));
     in.read((char*)&n_p,sizeof(n_p));
