@@ -152,8 +152,8 @@ private:
   gzFile read_file_(gzFile file, std::size_t N, std::size_t Nskip) {
     int32_t N1, N2, current_line(0);
     double E1, E2, minEnergy, energyBinWidth;
-    std::size_t outer_cols(matrix.size1()), outer_rows(matrix.size2());
-    std::size_t inner_cols(matrix(0,0).size1()), inner_rows(matrix(0,0).size2()), minParticles;
+    std::size_t outer_cols, outer_rows;
+    std::size_t inner_cols, inner_rows, minParticles;
     binary_line bl[100];
 
     // skip Nskip lines from the beginning
@@ -166,6 +166,10 @@ private:
       // create a unsinged matrix to operate on
       resize_matrix(matrix, outer_rows_, outer_cols_, inner_rows_, inner_cols_);
     }
+    outer_cols = matrix.size1();
+    outer_rows = matrix.size2();
+    inner_cols = matrix(0,0).size1();
+    inner_rows = matrix(0,0).size2();
 
     {
       State::lease s;
