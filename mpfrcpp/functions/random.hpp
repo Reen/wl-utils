@@ -36,12 +36,6 @@ namespace mpfr {
 class Random {
     static RandomState defaultState_;
 public:
-    static Real random2 (const mp_size_t& s, const Exponent& e, const Precision& pr = Real::getParameters().getDefaultPrecision()) throw() {
-        Real x (pr.getMpfrPrecT());
-        mpfr_random2 (x.getMpfrT(), s, e.getMpExpT());
-        return x;
-    }
-
     Real urandomb (RandomState s, const Precision& pr) throw() {
         Real x (pr.getMpfrPrecT());
         mpfr_urandomb (x.getMpfrT(), s.getGmpRandstateT());

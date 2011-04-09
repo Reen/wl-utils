@@ -427,7 +427,7 @@ namespace mpfr {
             }
 
             Real& operator= (const mpf_t& y) throw() {
-                if (getPrecision() < mpf_get_prec(y))
+                if ((long int)getPrecision() < mpf_get_prec(y))
                     setPrecision(mpf_get_prec(y));
                 mpfr_set_f (getMpfrT(), y, getParameters().getDefaultRoundMode().getMpfrRndT());
                 return *this;
