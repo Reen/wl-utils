@@ -16,11 +16,23 @@ from optparse import OptionParser
 row_length = 24
 
 def mat_get_header(infile, do_print = True):
+    data = infile.read(8)
+    version, filetype = struct.unpack("=II", data)
+    if version != 1:
+        raise Exception("Unknown parq matrix file version.")
+    if filetype == 1:
+        filetype = 'integer'
+    elif filetype == 2:
+        filetype = 'double'
+    else
+        raise Exception("Unknown file type.")
     data = infile.read(48)
     min_particles, max_particles, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume = struct.unpack("=IIIdddId",data)
     data = infile.read(16)
     outer_cols, outer_rows, inner_cols, inner_rows = struct.unpack("IIII",data)
     data = {
+        "version"       : version,
+        "filetype"      : filetype,
         "min_particles" : min_particles,
         "max_particles" : max_particles,
         "n_particles"   : n_particles,
@@ -37,6 +49,7 @@ def mat_get_header(infile, do_print = True):
     if do_print:
         from string import Template
         templ = Template("""Matrix Informationen:
+File: Version: ${version}  Type: ${filetype}
 Size: ${outer_cols}*${inner_cols} X ${outer_rows}*${inner_rows}
 System:
   Particles: $min_particles - $max_particles | $n_particles
@@ -224,8 +237,12 @@ def convertmat(opts, infile, filename):
     prog = ProgressBar(0, outer_cols*3-2, 77, mode='fixed', char='#')
     for i in range(0,outer_cols):
         for j in range(max(i-1,0),min(i+2,outer_rows)):
-            data = infile.read(inner_cols*inner_rows*8)
-            arr = np.fromstring(data, dtype=float)
+            if settings["filetype"] == 'integer':
+                data = infile.read(inner_cols*inner_rows*4)
+                arr = np.fromstring(data, dtype=int)
+            else:
+                data = infile.read(inner_cols*inner_rows*8)
+                arr = np.fromstring(data, dtype=float)
             arr = np.reshape(arr, [inner_cols, inner_rows])
             count += to_sparse(file_str_3, file_str_4, arr, inner_rows, inner_cols, i, j)
             if i == j:
