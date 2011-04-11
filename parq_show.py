@@ -16,8 +16,8 @@ from optparse import OptionParser
 row_length = 24
 
 def mat_get_header(infile, do_print = True):
-    data = infile.read(8)
-    version, filetype = struct.unpack("=II", data)
+    data = infile.read(12)
+    version, filetype, vstrlen = struct.unpack("=III", data)
     if version != 1:
         raise Exception("Unknown parq matrix file version.")
     if filetype == 1:
@@ -26,6 +26,10 @@ def mat_get_header(infile, do_print = True):
         filetype = 'double'
     else
         raise Exception("Unknown file type.")
+    if vstrlen > 0:
+        githead = infile.read(vstrlen)
+    else
+        githead = ""
     data = infile.read(48)
     min_particles, max_particles, n_particles, min_energy, max_energy, energy_bin_width, n_energy, volume = struct.unpack("=IIIdddId",data)
     data = infile.read(16)
@@ -33,6 +37,7 @@ def mat_get_header(infile, do_print = True):
     data = {
         "version"       : version,
         "filetype"      : filetype,
+        "githead"       : githead,
         "min_particles" : min_particles,
         "max_particles" : max_particles,
         "n_particles"   : n_particles,
@@ -50,6 +55,7 @@ def mat_get_header(infile, do_print = True):
         from string import Template
         templ = Template("""Matrix Informationen:
 File: Version: ${version}  Type: ${filetype}
+Towhee: ${githead}
 Size: ${outer_cols}*${inner_cols} X ${outer_rows}*${inner_rows}
 System:
   Particles: $min_particles - $max_particles | $n_particles
