@@ -27,9 +27,10 @@ void resize_matrix(T& matrix,
   }
 }
 
+template<class T>
 class QMatrix : boost::noncopyable {
 public:
-  typedef boost::numeric::ublas::matrix< double, boost::numeric::ublas::column_major > inner_matrix_t;
+  typedef boost::numeric::ublas::matrix< T, boost::numeric::ublas::column_major > inner_matrix_t;
   typedef boost::numeric::ublas::banded_matrix< inner_matrix_t, boost::numeric::ublas::column_major > matrix_t;
   typedef boost::numeric::ublas::matrix< double, boost::numeric::ublas::row_major > dos_matrix_t;
 protected:
@@ -120,7 +121,7 @@ public:
       for (int j = std::max(i-1, 0);
            j < std::min(i+2, static_cast<int>(outer_rows_));
            ++j) {
-        out.write((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(double));
+        out.write((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(T));
       }
     }
   }
@@ -145,7 +146,7 @@ public:
       for (int j = std::max(i-1, 0);
            j < std::min(i+2, static_cast<int>(outer_rows_));
            ++j) {
-        in.read((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(double));
+        in.read((char*)(&q_matrix_(i,j).data()[0]), q_matrix_(i,j).data().size() * sizeof(T));
       }
     }
   }

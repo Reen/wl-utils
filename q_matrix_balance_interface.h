@@ -19,19 +19,19 @@
 
 class DoParallelPowerMethod {
   std::size_t outer_cols_;
-  QMatrix::matrix_t *const q_matrix_;
+  QMatrix<double>::matrix_t *const q_matrix_;
   typedef boost::numeric::ublas::vector<double> vector_t;
 public:
   void operator()(const tbb::blocked_range<std::size_t>& r) const {
-    QMatrix::matrix_t& q_matrix(*q_matrix_);
+    QMatrix<double>::matrix_t& q_matrix(*q_matrix_);
     for(std::size_t nj = r.begin(); nj != r.end(); ++nj) {
       int s_nj = int(nj);
       for (std::size_t ni = std::max(s_nj-1, 0); ni < std::min(nj+2, outer_cols_); ++ni)
       {
         std::cout << ni << " " << nj << std::endl;
-        QMatrix::inner_matrix_t m(q_matrix(ni, nj));
+        QMatrix<double>::inner_matrix_t m(q_matrix(ni, nj));
         for(std::size_t i = 0; i < m.size1(); ++i) {
-          boost::numeric::ublas::matrix_column<QMatrix::inner_matrix_t> col(m, i);
+          boost::numeric::ublas::matrix_column<QMatrix<double>::inner_matrix_t> col(m, i);
           double sum = std::accumulate(col.begin(), col.end(), 0.0);
           if(sum > 0) {
             col /= sum;
@@ -93,7 +93,7 @@ public:
     }
   }
 
-  DoParallelPowerMethod( QMatrix::matrix_t *const q_matrix, std::size_t outer_cols )
+  DoParallelPowerMethod( QMatrix<double>::matrix_t *const q_matrix, std::size_t outer_cols )
       : q_matrix_(q_matrix), outer_cols_(outer_cols)
   {
 
@@ -134,7 +134,7 @@ protected:
 
 namespace ublas = boost::numeric::ublas;
 
-class QMatrixBalanceInterface : public QMatrix {
+class QMatrixBalanceInterface : public QMatrix<double> {
   bool dos_matrix_set_;
   void print_(const matrix_t& matrix, std::string file = "") const {
     std::ofstream outfile;
@@ -201,7 +201,7 @@ class QMatrixBalanceInterface : public QMatrix {
 
 public:
   QMatrixBalanceInterface()
-      : QMatrix(), dos_matrix_set_(false) {}
+      : QMatrix<double>(), dos_matrix_set_(false) {}
 
   /**
    * ILU - Incomplete LU-Decomposition

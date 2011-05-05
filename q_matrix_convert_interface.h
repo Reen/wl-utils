@@ -22,7 +22,7 @@
 
 typedef boost::numeric::ublas::banded_matrix<boost::numeric::ublas::matrix< uint32_t, boost::numeric::ublas::column_major >, boost::numeric::ublas::column_major > int_q_matrix_t;
 
-class QMatrixConvertInterface : public QMatrix {
+class QMatrixConvertInterface : public QMatrix<double> {
 public:
   int_q_matrix_t matrix;
   bool matrix_set_up;
@@ -30,7 +30,7 @@ public:
                           std::size_t n2,
                           std::size_t n3,
                           std::size_t n4)
-      : QMatrix(n1, n2, n3, n4), matrix_set_up(false) {}
+      : QMatrix<double>(n1, n2, n3, n4), matrix_set_up(false) {}
   
   gzFile read_file(const std::string &filename,
                    std::size_t N = std::numeric_limits<std::size_t>::max(),
