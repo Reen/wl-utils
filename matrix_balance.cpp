@@ -73,13 +73,6 @@ int main (int argc, char *argv[])
     s->set_volume(volumeArg.getValue());
 
     work_dir = workDirArg.getValue();
-    if (work_dir != ""){
-      path work_dir_p(work_dir);
-      if (!exists(work_dir_p) || !is_directory(work_dir_p)) {
-        create_directory(work_dir_p);
-        std::cerr << "Created working directory" << std::endl;
-      }
-    }
     s->set_working_directory(work_dir);
     load_archive = loadArg.getValue();
   }
