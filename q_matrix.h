@@ -30,8 +30,8 @@ void resize_matrix(T& matrix,
 template<class T>
 class QMatrix : boost::noncopyable {
 public:
-  typedef boost::numeric::ublas::matrix< T, boost::numeric::ublas::column_major > inner_matrix_t;
-  typedef boost::numeric::ublas::banded_matrix< inner_matrix_t, boost::numeric::ublas::column_major > matrix_t;
+  typedef boost::numeric::ublas::matrix< T, boost::numeric::ublas::row_major > inner_matrix_t;
+  typedef boost::numeric::ublas::banded_matrix< inner_matrix_t, boost::numeric::ublas::row_major > matrix_t;
   typedef boost::numeric::ublas::matrix< double, boost::numeric::ublas::row_major > dos_matrix_t;
 protected:
   matrix_t q_matrix_;
@@ -108,6 +108,9 @@ public:
     assert(j < outer_cols_);
     return q_matrix_(i,j);
   }
+
+  const matrix_t& matrix() const { return q_matrix_; }
+  matrix_t& matrix() { return q_matrix_; }
   
   void save_to(io::filtering_ostream &out) {
     uint32_t o_c(outer_cols_), o_r(outer_rows_), i_c(inner_cols_), i_r(inner_rows_);

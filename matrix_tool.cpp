@@ -6,38 +6,41 @@
 #include <sstream>
 #include <limits>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
 #include <boost/assign/std/vector.hpp>
 #include <boost/assign/std/set.hpp>
-#include <boost/iostreams/device/file_descriptor.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
 
 namespace io = boost::iostreams;
+namespace fs = boost::filesystem;
 
 
 #include <tclap/CmdLine.h>
 
 #include "q_matrix.h"
 #include "state.h"
+#include "normalize.h"
+#include "eigenvector.h"
+
+void variance() {}
+void combine() {}
 
 
 int main (int argc, char *argv[])
 {
-  std::string file1, file2, command, out_filename;
+  std::string command, out_filename;
+  std::vector<std::string> files;
   try
   {
     using namespace boost::assign;
 
     TCLAP::CmdLine cmd("q_matrix", ' ', "0.9");
     std::vector<std::string> allowed_commands_vec;
-    allowed_commands_vec += "compare","dos";
+    allowed_commands_vec += "normalize", "calcdos", "variance", "combine";
     TCLAP::ValuesConstraint<std::string> allowed_commands(allowed_commands_vec);
     TCLAP::UnlabeledValueArg<std::string> commandArg("command","Command to be executed",true,"", &allowed_commands, cmd);
-    TCLAP::UnlabeledValueArg<std::string> file1Arg("file1","Filename of the first parQ dat file",true,"","filename", cmd);
-    TCLAP::UnlabeledValueArg<std::string> file2Arg("file2","Filename of the second parQ dat file.\nLeave empty to use the first twice.",false,"","filename", cmd);
 
+    /*
     TCLAP::ValueArg<std::size_t> nminArg("","nmin","Minimum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nmaxArg("","nmax","Maximum number of particles.",false,0,"int", cmd);
     TCLAP::ValueArg<std::size_t> nEnergyArg("","nEnergy","Number of Energy bins. = 500",false,500,"int", cmd);
@@ -46,22 +49,27 @@ int main (int argc, char *argv[])
     TCLAP::ValueArg<double> volumeArg("","volume","Box volume.",false,125.0,"float", cmd);
     TCLAP::ValueArg<std::string> outArg("o","out","Filename for serialized output.",false,"","filename.gz", cmd);
     commandArg.requires("dos") += &nminArg, &nmaxArg, &nEnergyArg, &eminArg, &emaxArg, &volumeArg;
-    
+    */
+    TCLAP::ValueArg<std::string> outArg("o","out","Filename or directory for output.",false,"","filename.gz", cmd);
+    TCLAP::UnlabeledMultiArg<std::string> filesArg("files","Filenames of matrix files.",true,"filenames", cmd);
+
     cmd.parse( argc, argv );
 
-    command = commandArg.getValue();
-    file1 = file1Arg.getValue();
-    file2 = file2Arg.getValue();
     State::lease s;
-    s->set_min_particles(nminArg.getValue());
-    s->set_max_particles(nmaxArg.getValue());
-    s->set_min_energy(eminArg.getValue());
-    s->set_max_energy(emaxArg.getValue());
-    s->set_n_energy(nEnergyArg.getValue());
-    s->set_volume(volumeArg.getValue());
-
+    command = commandArg.getValue();
+    files = filesArg.getValue();
     out_filename = outArg.getValue();
-
+    if (files.size() > 1) {
+      // the user specified multiple input files, interpret -o as output directory
+      if (outArg.isSet() && fs::is_directory(out_filename)) {
+        s->set_working_directory(out_filename);
+      }
+    } else  {
+      if (outArg.isSet()) {
+        fs::path p(files[0]);
+        s->set_working_directory(p.parent_path().string());
+      }
+    }
   }
   catch (TCLAP::ArgException &e)  // catch any exceptions
   {
@@ -69,36 +77,27 @@ int main (int argc, char *argv[])
     return -1;
   }
 
-  if (command == "compare") {
-    std::size_t nParticles(State::instance->n_particles());
-    std::size_t nEnergy(State::instance->n_energy());
-    QMatrix<uint32_t> q(nParticles,nParticles,nEnergy,nEnergy);
-    QMatrix<double> qD1(nParticles,nParticles,nEnergy,nEnergy);
-    QMatrix<double> qD2(nParticles,nParticles,nEnergy,nEnergy);
-
-    std::cerr << "reading 1" << std::endl;
-    gzFile parq_file_1 = q.read_file(file1, 10000000);
-    qD1.stochastic_from(q);
-
-    q.clear();
-
-    std::cerr << "reading 2" << std::endl;
-    if (file2 != "") {
-      q.read_file(file2, 10000000);
-    } else {
-      q.read_file(parq_file_1, 10000000);
+  for (int i = 0; i < files.size(); i++) {
+    if (fs::exists(files[i]) && fs::is_regular_file(files[i])) {
+      continue;
     }
-
-    qD2.stochastic_from(q);
-
-    qD1 -= qD2;
-
-    qD1.print();
-  } else if (command == "dos") {
-
-  } else {
-    std::cout << "Error: unknown command." << std::endl;
+    std::cerr << "File not found: " << files[i] << std::endl;
     return -1;
   }
+
+  if (command == "normalize") {
+    for (int i = 0; i < files.size(); i++) {
+      normalize(files[i]);
+    }
+  } else if (command == "calcdos") {
+    for (int i = 0; i < files.size(); i++) {
+      calcdos(files[i]);
+    }
+  } else if (command == "variance") {
+    variance();
+  } else if (command == "combine") {
+    combine();
+  }
+
   return 0;
 }

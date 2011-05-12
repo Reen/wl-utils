@@ -1,9 +1,9 @@
 include( common.pri )
 
-HEADERS  = q_matrix.h state.h
-SOURCES  = matrix_tool.cpp
+HEADERS  = q_matrix.h state.h misc.h normalize.h eigenvector.h
+SOURCES  = matrix_tool.cpp misc.cpp normalize.cpp eigenvector.cpp
 LIBS     = -lz
-BOOST    = -lboost_thread -lboost_serialization -lboost_iostreams -lboost_filesystem -lboost_system
+BOOST    = -lboost_regex -lboost_thread -lboost_iostreams -lboost_filesystem -lboost_system
 
 include( system.pri )
 
@@ -13,5 +13,5 @@ CONFIG(debug, debug|release) {
 } else {
 	TARGET  = matrix_tool
 	DEFINES = NDEBUG
-	QMAKE_CXXFLAGS_RELEASE = -O3 -msse -msse2 -fomit-frame-pointer -ftree-vectorize
+	QMAKE_CXXFLAGS_RELEASE = -O3 -msse -msse2 -msse3 -msse4 -fomit-frame-pointer -ftree-vectorize
 }

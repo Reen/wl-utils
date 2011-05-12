@@ -2,6 +2,7 @@
 #define _STATE_H_
 
 #include <stdexcept>
+#include <iostream>
 
 #include "boost/filesystem.hpp"
 
@@ -25,6 +26,8 @@ private:
   std::size_t n_energy_;
   double volume_;
   std::string working_directory_;
+  std::string githead_;
+  std::size_t matrix_type_;
 
   void set_n_particles() {
     n_particles_ = max_particles_ - min_particles_ + 1;
@@ -47,6 +50,9 @@ public:
   const double& half_energy_bin_width() const { return half_energy_bin_width_; }
   const double& volume() const { return volume_; }
   const std::string& working_directory() const { return working_directory_; }
+  bool have_working_directory() const { return (working_directory_.size() != 0); }
+  const std::string& githead() const { return githead_; }
+  const std::size_t& matrix_type() const { return matrix_type_; }
 
   void set_min_particles(const std::size_t& min_particles) { min_particles_ = min_particles; set_n_particles(); }
   void set_max_particles(const std::size_t& max_particles) { max_particles_ = max_particles; set_n_particles(); }
@@ -54,19 +60,26 @@ public:
   void set_max_energy(const double& max_energy) { max_energy_ = max_energy; set_energy_bin_width(); }
   void set_n_energy(const std::size_t& n_energy) { n_energy_ = n_energy; set_energy_bin_width(); }
   void set_volume(const double& volume) { volume_ = volume; }
+  void set_matrix_type(const std::size_t& mt) { matrix_type_ = mt; }
 
   void set_working_directory(const std::string& working_directory) {
     if(working_directory == "") { return; }
 
     using namespace boost::filesystem;
+    using namespace boost::system;
     path w_dir(working_directory);
-    if(!exists(w_dir) || !is_directory(w_dir)) {
+    if (!exists(w_dir)) {
       create_directory(w_dir);
+    }
+
+    if (!is_directory(w_dir)) {
+      throw filesystem_error(std::string("Working directory could not be created."),
+          w_dir, error_code(errc::not_a_directory, generic_category()));
     }
 
     working_directory_ = working_directory;
 
-    if(*(working_directory_.rbegin()) != '/') {
+    if (*(working_directory_.rbegin()) != '/') {
       working_directory_ += '/';
     }
   }
@@ -78,6 +91,7 @@ public:
 
   void print_to_stream(std::ostream& os) {
     os
+    << "# towhee   " << githead_          << "\n"
     << "# nmin     " << min_particles_    << "\n"
     << "# nmax     " << max_particles_    << "\n"
     << "# emin     " << min_energy_       << "\n"
@@ -91,10 +105,15 @@ public:
   void save_to(io::filtering_ostream &out) {
     uint32_t min_p(min_particles_), max_p(max_particles_);
     uint32_t n_p(n_particles_), n_e(n_energy_);
-    std::size_t version = 1;
-    std::size_t type = 2;
+    uint32_t version = 1;
+    uint32_t type = 2;
+    uint32_t githeadstrlen = githead_.size();
     out.write((char*)&version,sizeof(version));
     out.write((char*)&type,sizeof(type));
+    out.write((char*)&githeadstrlen,sizeof(githeadstrlen));
+    if (githeadstrlen > 0) {
+      out.write(githead_.c_str(), githeadstrlen);
+    }
     out.write((char*)&min_p,sizeof(min_p));
     out.write((char*)&max_p,sizeof(max_p));
     out.write((char*)&n_p,sizeof(n_p));
@@ -106,16 +125,21 @@ public:
   }
 
   void load_from(io::filtering_istream &in) {
-    uint32_t min_p, max_p, n_p, n_e, version, type;
+    uint32_t min_p, max_p, n_p, n_e, version, type, githeadstrlen;
+    char * githead;
     in.read((char*)&version,sizeof(version));
     if (version != 1) {
       throw std::runtime_error("Unknown parq matrix file version.");
     }
     in.read((char*)&type,sizeof(type));
-    if (type != 2) {
-      throw std::runtime_error("This program expects double precision matrices.");
+    in.read((char*)&githeadstrlen, sizeof(githeadstrlen));
+    if (githeadstrlen > 0) {
+      githead = new char[githeadstrlen+1];
+      in.read(githead, githeadstrlen);
+      githead[githeadstrlen] = '\0';
+      githead_ = githead;
+      delete githead;
     }
-    in.read((char*)&min_p,sizeof(min_p));
     in.read((char*)&min_p,sizeof(min_p));
     in.read((char*)&max_p,sizeof(max_p));
     in.read((char*)&n_p,sizeof(n_p));
@@ -124,6 +148,7 @@ public:
     in.read((char*)&energy_bin_width_,sizeof(energy_bin_width_));
     in.read((char*)&n_e,sizeof(n_e));
     in.read((char*)&volume_,sizeof(volume_));
+    matrix_type_ = type;
     min_particles_ = min_p;
     max_particles_ = max_p;
     n_particles_ = n_p;
