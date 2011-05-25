@@ -113,7 +113,6 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
     int s_ni = int(ni);
     for (std::size_t ei = 0; ei < inner_rows; ++ei)
     {
-      //bool brk = false;
       for (std::size_t nj = std::max(s_ni-1, 0); nj < std::min(ni+2, outer_cols); ++nj)
       {
         pair_mat(ni, nj).resize(inner_rows);
@@ -127,12 +126,11 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
               have_first = true;
             }
             pair_mat(ni, nj)[ei].second = ej;
-            //brk = true;
-            //break;
           }
         }
+#ifndef NDEBUG
         std::cerr << ni << " " << nj << " " << ei << " " << (int)zero_mat(ni, ei) << " " << pair_mat(ni, nj)[ei].first << " " << pair_mat(ni, nj)[ei].second << std::endl;
-        //if(brk) {break;}
+#endif
       }
     }
   }
@@ -185,7 +183,6 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
 
     if (converged) {
       print_dos("dos", dos, i, false);
-      //dos_matrix_ = dos;
       break;
     }
 
