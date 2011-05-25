@@ -194,13 +194,13 @@ int main (int argc, char const *argv[])
 				parq << "\n";
 			} else if(line.compare(4,14,"data_hist_full") == 0) {
 				copy(line.begin()+18, line.end(), ostream_iterator<char>(data_hist_full));
-				data_hist_full << "\n";
+				data_hist_full << std::endl;
 			} else if(line.compare(4,9,"data_hist") == 0) {
 				copy(line.begin()+13, line.end(), ostream_iterator<char>(data_hist));
-				data_hist << "\n";
+				data_hist << std::endl;
 			} else if(line.compare(4,4,"data") == 0) {
 				copy(line.begin()+8, line.end(), ostream_iterator<char>(data));
-				data << "\n";
+				data << std::endl;
 			} else if(line.compare(4,4,"stat") == 0) {
 				stat << last_timestep;
 				{
@@ -219,7 +219,7 @@ int main (int argc, char const *argv[])
 					stat << std::setw(15) << std::right << t5;
 					stat << std::setw(15) << std::right << t6;
 				}
-				stat << "\n";
+				stat << std::endl;
 			} else if(line.compare(4,10,"matr_begin") == 0) {
 				output.flush();
 				unsigned int lines = 0;
