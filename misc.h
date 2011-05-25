@@ -5,7 +5,6 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include "state.h"
 
-
 enum CompressionType { CT_NONE, CT_GZIP, CT_BZIP2 };
 CompressionType getFileCompression(std::string filepath);
 
@@ -13,6 +12,6 @@ void openMatrixFileRead(boost::iostreams::filtering_istream &in, std::string fil
 void openMatrixFileWrite(boost::iostreams::filtering_ostream &out, std::string filepath, CompressionType ct);
 std::string generateOutputFilename(std::string infile, std::string tag);
 bool fileLimitReached(std::size_t num_files);
-void checkMatrixHeader(const MatrixHeader &, uint32_t, uint32_t);
+void checkMatrixHeader(const MatrixHeader &, uint32_t, uint32_t,bool check_matrix_type = true);
 
 #endif /* end of include guard: MISC_1ZUMG4QW */

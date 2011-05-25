@@ -82,11 +82,12 @@ bool fileLimitReached(std::size_t num_files) {
 
 void checkMatrixHeader(const MatrixHeader &header,
                        uint32_t version,
-                       uint32_t matrix_type) {
+                       uint32_t matrix_type,
+                       bool check_matrix_type) {
   if (header.version != version) {
     throw std::runtime_error("Unknown parq matrix file version.");
   }
-  if (header.matrix_type != matrix_type) {
+  if (check_matrix_type && header.matrix_type != matrix_type) {
     if (matrix_type == 1) {
       throw std::runtime_error("Integer matrix expected.");
     } else if (matrix_type == 2) {
