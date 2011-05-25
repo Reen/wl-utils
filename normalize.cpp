@@ -67,6 +67,7 @@ void normalize(std::string filepath) {
   if (s->matrix_type() != 1) {
     throw std::runtime_error("Integer Matrix expected, different data type found.");
   }
+  s->print_to_stream(std::cout);
   QMatrix<int32_t> qi;
   qi.load_from(in);
   in.pop();
@@ -76,7 +77,7 @@ void normalize(std::string filepath) {
   s->set_matrix_type(2);
 
   io::filtering_ostream out;
-  std::string outfilepath = generateOutputFilename(filepath);
+  std::string outfilepath = generateOutputFilename(filepath, "norm");
   openMatrixFileWrite(out, outfilepath, ct);
   s->save_to(out);
   qd.save_to(out);

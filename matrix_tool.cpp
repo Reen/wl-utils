@@ -19,11 +19,10 @@ namespace fs = boost::filesystem;
 
 #include "q_matrix.h"
 #include "state.h"
-#include "normalize.h"
+#include "combine.h"
 #include "eigenvector.h"
-
-void variance() {}
-void combine() {}
+#include "normalize.h"
+#include "variance.h"
 
 
 int main (int argc, char *argv[])
@@ -94,9 +93,9 @@ int main (int argc, char *argv[])
       calcdos(files[i]);
     }
   } else if (command == "variance") {
-    variance();
+    variance(files);
   } else if (command == "combine") {
-    combine();
+    return combine(files);
   }
 
   return 0;

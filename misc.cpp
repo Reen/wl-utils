@@ -46,7 +46,7 @@ void openMatrixFileWrite(io::filtering_ostream &out, std::string filepath, Compr
   out.push(io::file_sink(filepath, std::ios::binary|std::ios::in));
 }
 
-std::string generateOutputFilename(std::string infile) {
+std::string generateOutputFilename(std::string infile, std::string tag) {
   fs::path inpath(infile);
   inpath = fs::absolute(inpath);
   std::string infile_path(inpath.parent_path().string()),
@@ -54,7 +54,7 @@ std::string generateOutputFilename(std::string infile) {
               outfile;
   static const boost::regex e(".dat");
   if (infile_name.find(".dat") != std::string::npos) {
-    outfile = boost::regex_replace(infile_name, e, ".norm.dat", boost::match_default | boost::format_sed);
+    outfile = boost::regex_replace(infile_name, e, "."+tag+".dat", boost::match_default | boost::format_sed);
   } else {
     outfile += ".norm";
   }
@@ -66,4 +66,33 @@ std::string generateOutputFilename(std::string infile) {
   }
 }
 
+bool fileLimitReached(std::size_t num_files) {
+  struct rlimit limit;
+  if (getrlimit(RLIMIT_NOFILE, &limit) != 0) {
+    std::cerr << "rlimit failed with errno=" << errno << std::endl;
+    return true;
+  } else {
+    if (num_files > limit.rlim_cur) {
+      std::cerr << "More matrix files specified than number of files allowed to be opened.\n"
+                   "Please raise ulimit -n..." << std::endl;
+      return true;
+    }
+  }
+}
 
+void checkMatrixHeader(const MatrixHeader &header,
+                       uint32_t version,
+                       uint32_t matrix_type) {
+  if (header.version != version) {
+    throw std::runtime_error("Unknown parq matrix file version.");
+  }
+  if (header.matrix_type != matrix_type) {
+    if (matrix_type == 1) {
+      throw std::runtime_error("Integer matrix expected.");
+    } else if (matrix_type == 2) {
+      throw std::runtime_error("Double matrix expected.");
+    } else {
+      throw std::runtime_error("Matrix type mismatch. You requested unkown matrix type and got a different one.");
+    }
+  }
+}

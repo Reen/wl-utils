@@ -14,53 +14,135 @@
 
 namespace io = boost::iostreams;
 
+struct MatrixHeader {
+  uint32_t version;
+  uint32_t matrix_type;
+  uint32_t githead_strlen;
+  bool operator==(const MatrixHeader &rhs) const {
+    return (version == rhs.version
+        && matrix_type == rhs.matrix_type
+        && githead_strlen == rhs.githead_strlen);
+  }
+};
+
+#pragma pack(push)
+#pragma pack(1)
+struct MatrixSettings {
+  uint32_t min_particles;
+  uint32_t max_particles;
+  uint32_t n_particles;
+  double min_energy;
+  double max_energy;
+  double energy_bin_width;
+  uint32_t n_energy;
+  double volume;
+  bool operator==(const MatrixSettings &rhs) const {
+    return (  min_particles == rhs.min_particles
+        &&    max_particles == rhs.max_particles
+        &&      n_particles == rhs.n_particles
+        &&       min_energy == rhs.min_energy
+        &&       max_energy == rhs.max_energy
+        && energy_bin_width == rhs.energy_bin_width
+        &&         n_energy == rhs.n_energy
+        &&           volume == rhs.volume);
+  }
+};
+#pragma pack(pop)
+
+struct MatrixDimensions {
+  uint32_t outer_cols;
+  uint32_t outer_rows;
+  uint32_t inner_cols;
+  uint32_t inner_rows;
+  bool operator==(const MatrixDimensions &rhs) const {
+    return (outer_cols == rhs.outer_cols
+        &&  outer_rows == rhs.outer_rows
+        &&  inner_cols == rhs.inner_cols
+        &&  inner_rows == rhs.inner_rows);
+  }
+};
+
+struct StateData {
+public:
+  MatrixHeader header;
+  char* githead;
+  MatrixSettings settings;
+
+  StateData() : githead(NULL) {}
+
+  // destructor deletes githead string
+  ~StateData() {
+    if (githead != NULL) {
+      delete githead;
+    }
+  }
+};
+
 class State : public boost::singleton<State> {
 private:
-  std::size_t min_particles_;
-  std::size_t max_particles_;
-  std::size_t n_particles_;
-  double min_energy_;
-  double max_energy_;
-  double energy_bin_width_;
+  StateData data;
   double half_energy_bin_width_;
-  std::size_t n_energy_;
-  double volume_;
   std::string working_directory_;
-  std::string githead_;
-  std::size_t matrix_type_;
 
   void set_n_particles() {
-    n_particles_ = max_particles_ - min_particles_ + 1;
+    data.settings.n_particles =
+      data.settings.max_particles - data.settings.min_particles + 1;
   }
 
   void set_energy_bin_width() {
-    energy_bin_width_ = (max_energy_-min_energy_)/n_energy_;
-    half_energy_bin_width_ = (energy_bin_width_/2.0);
+    data.settings.energy_bin_width = (data.settings.max_energy-data.settings.min_energy)/data.settings.n_energy;
+    half_energy_bin_width_ = (data.settings.energy_bin_width/2.0);
   }
 public:
-  State(boost::restricted) : n_energy_(1) {}
+  State(boost::restricted) {}
 
-  const std::size_t& min_particles() const { return min_particles_; }
-  const std::size_t& max_particles() const { return max_particles_; }
-  const std::size_t& n_particles() const { return n_particles_; }
-  const double& min_energy() const { return min_energy_; }
-  const double& max_energy() const { return max_energy_; }
-  const std::size_t& n_energy() const { return n_energy_; }
-  const double& energy_bin_width() const { return energy_bin_width_; }
+  const uint32_t& min_particles() const { return data.settings.min_particles; }
+  const uint32_t& max_particles() const { return data.settings.max_particles; }
+  const uint32_t& n_particles() const { return data.settings.n_particles; }
+  const double& min_energy() const { return data.settings.min_energy; }
+  const double& max_energy() const { return data.settings.max_energy; }
+  const uint32_t& n_energy() const { return data.settings.n_energy; }
+  const double& energy_bin_width() const { return data.settings.energy_bin_width; }
   const double& half_energy_bin_width() const { return half_energy_bin_width_; }
-  const double& volume() const { return volume_; }
+  const double& volume() const { return data.settings.volume; }
   const std::string& working_directory() const { return working_directory_; }
   bool have_working_directory() const { return (working_directory_.size() != 0); }
-  const std::string& githead() const { return githead_; }
-  const std::size_t& matrix_type() const { return matrix_type_; }
+  std::string githead() const { return data.githead; }
+  const uint32_t& matrix_type() const { return data.header.matrix_type; }
 
-  void set_min_particles(const std::size_t& min_particles) { min_particles_ = min_particles; set_n_particles(); }
-  void set_max_particles(const std::size_t& max_particles) { max_particles_ = max_particles; set_n_particles(); }
-  void set_min_energy(const double& min_energy) { min_energy_ = min_energy; set_energy_bin_width(); }
-  void set_max_energy(const double& max_energy) { max_energy_ = max_energy; set_energy_bin_width(); }
-  void set_n_energy(const std::size_t& n_energy) { n_energy_ = n_energy; set_energy_bin_width(); }
-  void set_volume(const double& volume) { volume_ = volume; }
-  void set_matrix_type(const std::size_t& mt) { matrix_type_ = mt; }
+  void set_min_particles(const std::size_t& min_particles) {
+    data.settings.min_particles = min_particles;
+    set_n_particles();
+  }
+
+  void set_max_particles(const std::size_t& max_particles) {
+    data.settings.max_particles = max_particles;
+    set_n_particles();
+  }
+
+  void set_min_energy(const double& min_energy) {
+    data.settings.min_energy = min_energy;
+    set_energy_bin_width();
+  }
+
+  void set_max_energy(const double& max_energy) {
+    data.settings.max_energy = max_energy;
+    set_energy_bin_width();
+  }
+
+  void set_n_energy(const std::size_t& n_energy)
+  {
+    data.settings.n_energy = n_energy;
+    set_energy_bin_width();
+  }
+
+  void set_volume(const double& volume) {
+    data.settings.volume = volume;
+  }
+
+  void set_matrix_type(const std::size_t& mt) {
+    data.header.matrix_type = mt;
+  }
 
   void set_working_directory(const std::string& working_directory) {
     if(working_directory == "") { return; }
@@ -85,78 +167,42 @@ public:
   }
 
   double bin_to_energy(const std::size_t& bin) {
-    return (bin * energy_bin_width_ + min_energy_
+    return (bin * data.settings.energy_bin_width + data.settings.min_energy
             + half_energy_bin_width_);
   }
 
   void print_to_stream(std::ostream& os) {
     os
-    << "# towhee   " << githead_          << "\n"
-    << "# nmin     " << min_particles_    << "\n"
-    << "# nmax     " << max_particles_    << "\n"
-    << "# emin     " << min_energy_       << "\n"
-    << "# emax     " << max_energy_       << "\n"
-    << "# binwidth " << energy_bin_width_ << "\n"
-    << "# N_N      " << n_particles_      << "\n"
-    << "# E_N      " << n_energy_         << "\n"
-    << "# volume   " << volume_           << "\n";
+    << "# towhee   " << data.githead                   << "\n"
+    << "# nmin     " << data.settings.min_particles    << "\n"
+    << "# nmax     " << data.settings.max_particles    << "\n"
+    << "# emin     " << data.settings.min_energy       << "\n"
+    << "# emax     " << data.settings.max_energy       << "\n"
+    << "# binwidth " << data.settings.energy_bin_width << "\n"
+    << "# N_N      " << data.settings.n_particles      << "\n"
+    << "# E_N      " << data.settings.n_energy         << "\n"
+    << "# volume   " << data.settings.volume           << "\n";
   }
 
   void save_to(io::filtering_ostream &out) {
-    uint32_t min_p(min_particles_), max_p(max_particles_);
-    uint32_t n_p(n_particles_), n_e(n_energy_);
-    uint32_t version = 1;
-    uint32_t type = 2;
-    uint32_t githeadstrlen = githead_.size();
-    out.write((char*)&version,sizeof(version));
-    out.write((char*)&type,sizeof(type));
-    out.write((char*)&githeadstrlen,sizeof(githeadstrlen));
-    if (githeadstrlen > 0) {
-      out.write(githead_.c_str(), githeadstrlen);
+    out.write((char*)&data.header, sizeof(MatrixHeader));
+    if (data.header.githead_strlen > 0) {
+      out.write(data.githead, data.header.githead_strlen);
     }
-    out.write((char*)&min_p,sizeof(min_p));
-    out.write((char*)&max_p,sizeof(max_p));
-    out.write((char*)&n_p,sizeof(n_p));
-    out.write((char*)&min_energy_,sizeof(min_energy_));
-    out.write((char*)&max_energy_,sizeof(max_energy_));
-    out.write((char*)&energy_bin_width_,sizeof(energy_bin_width_));
-    out.write((char*)&n_e,sizeof(n_e));
-    out.write((char*)&volume_,sizeof(volume_));
+    out.write((char*)&data.settings, sizeof(MatrixSettings));
   }
 
   void load_from(io::filtering_istream &in) {
-    uint32_t min_p, max_p, n_p, n_e, version, type, githeadstrlen;
-    char * githead;
-    in.read((char*)&version,sizeof(version));
-    if (version != 1) {
+    in.read((char*)&(data.header), sizeof(MatrixHeader));
+    if (data.header.version != 1) {
       throw std::runtime_error("Unknown parq matrix file version.");
     }
-    in.read((char*)&type,sizeof(type));
-    in.read((char*)&githeadstrlen, sizeof(githeadstrlen));
-    if (githeadstrlen > 0) {
-      githead = new char[githeadstrlen+1];
-      in.read(githead, githeadstrlen);
-      githead[githeadstrlen] = '\0';
-      githead_ = githead;
-      delete githead;
+    if (data.header.githead_strlen > 0) {
+      data.githead = new char[data.header.githead_strlen+1];
+      in.read(data.githead, data.header.githead_strlen);
+      data.githead[data.header.githead_strlen] = '\0';
     }
-    in.read((char*)&min_p,sizeof(min_p));
-    in.read((char*)&max_p,sizeof(max_p));
-    in.read((char*)&n_p,sizeof(n_p));
-    in.read((char*)&min_energy_,sizeof(min_energy_));
-    in.read((char*)&max_energy_,sizeof(max_energy_));
-    in.read((char*)&energy_bin_width_,sizeof(energy_bin_width_));
-    in.read((char*)&n_e,sizeof(n_e));
-    in.read((char*)&volume_,sizeof(volume_));
-    matrix_type_ = type;
-    min_particles_ = min_p;
-    max_particles_ = max_p;
-    n_particles_ = n_p;
-    n_energy_ = n_e;
-    std::cout << "settings: " << min_p << " " << max_p << " " << n_p << " "
-      << min_energy_ << " " << max_energy_ << " " << energy_bin_width_ << " "
-      << n_e << " "
-      << volume_ << std::endl;
+    in.read((char*)&(data.settings), sizeof(MatrixSettings));
     set_energy_bin_width();
   }
 };
