@@ -76,6 +76,7 @@ int main (int argc, char *argv[])
     return -1;
   }
 
+  // check if all files are existant and regular
   for (int i = 0; i < files.size(); i++) {
     if (fs::exists(files[i]) && fs::is_regular_file(files[i])) {
       continue;
