@@ -5,6 +5,9 @@
 #include <stdexcept>
 #include <cmath>
 
+// Taken from http://www.codeproject.com/KB/recipes/root_finding_algorithms.aspx
+// Translated from C# to C++. Only slight changes were necessary.
+
 namespace RootFinding
 {
 	struct Range {
@@ -82,14 +85,14 @@ namespace RootFinding
 
 		void bracketingFactor(const double& value) {
 			if(value <= 0.0) {
-				throw new std::runtime_error("argument out of range");
+				throw std::runtime_error("argument out of range");
 			}
 			m_BracketingFactor = value;
 		}
 
 		void iterations(int value) {
 			if(value <= 0) {
-				throw new std::runtime_error("argument out of range");
+				throw std::runtime_error("argument out of range");
 			}
 			m_NbIterMax = value;
 		}
@@ -105,7 +108,7 @@ namespace RootFinding
 		bool searchBracketsOutward(double& xmin, double& xmax, double factor) {
 			// Check the range
 			if(xmin >= xmax) {
-				throw new RootFinderException(m_InvalidRange,0,Range(xmin,xmax),0.0);
+				throw RootFinderException(m_InvalidRange,0,Range(xmin,xmax),0.0);
 			}
 			double fmin, fmax;
 			fmin = m_f(xmin);
@@ -122,7 +125,7 @@ namespace RootFinding
 					fmax = m_f(xmax+=factor*(xmax-xmin));
 				}
 			} while(iiter++ < m_NbIterMax);
-			throw new RootFinderException(m_RootNotFound,iiter,Range(fmin,fmax),0.0);
+			throw RootFinderException(m_RootNotFound,iiter,Range(fmin,fmax),0.0);
 		}
 
 		virtual double solve(double x1, double x2, bool bracket) {
@@ -158,7 +161,7 @@ namespace RootFinding
 			double fmid(m_f(m_xmax));
 			if(m_xmin >= m_xmax || sign(f) == sign(fmid))
 			{
-				throw new RootFinderException(m_InvalidRange,0,Range(m_xmin,m_xmax),0.0);
+				throw RootFinderException(m_InvalidRange,0,Range(m_xmin,m_xmax),0.0);
 			}
 			if(f < 0.0) {
 				dx=m_xmax-m_xmin;
@@ -177,7 +180,7 @@ namespace RootFinding
 			} while(iiter++ < m_NbIterMax);
 
 			// L'algorithme a dépassé le nombre d'itérations autorisé
-			throw new RootFinderException(m_AccuracyNotReached,iiter,Range(std::min(xmid,x),std::max(xmid,x)),fabs(dx));
+			throw RootFinderException(m_AccuracyNotReached,iiter,Range(std::min(xmid,x),std::max(xmid,x)),fabs(dx));
 		}
 
 	public:
@@ -187,10 +190,10 @@ namespace RootFinding
 
 	class SecantRootFinder : public RootFinder
 	{
-  protected:
-    double find() {
-      double x1(m_xmin), x2(m_xmax), fl(m_f(x1)), f(m_f(x2));
-      double dx,xl,rts;
+	protected:
+		double find() {
+			double x1(m_xmin), x2(m_xmax), fl(m_f(x1)), f(m_f(x2));
+			double dx,xl,rts;
 			if (fabs(fl) < fabs(f)) {
 				rts=x1;
 				xl=x2;
@@ -202,7 +205,7 @@ namespace RootFinding
 			int iiter=0;
 			for (; iiter < m_NbIterMax; ++iiter) {
 				if (f==fl) {
-				  throw new RootFinderException(m_InadequatedAlgorithm,iiter,Range(x1,x2),fabs(x1-x2));
+					throw RootFinderException(m_InadequatedAlgorithm,iiter,Range(x1,x2),fabs(x1-x2));
 				}
 				dx=(xl-rts)*f/(f-fl);
 				xl=rts;
@@ -210,24 +213,25 @@ namespace RootFinding
 				rts += dx;
 				f=m_f(rts);
 				if (fabs(dx) < m_Accuracy || f == 0.0) {
-				  return rts;
+					return rts;
 				}
 			}
-			throw new RootFinderException(m_RootNotFound,iiter,Range(xl,x2),m_Accuracy);
+			throw RootFinderException(m_RootNotFound,iiter,Range(xl,x2),m_Accuracy);
 		}
 
+	public:
 		SecantRootFinder(function_type f) : RootFinder(f) {}
 		SecantRootFinder(function_type f,int niter,double accuracy) : RootFinder(f,niter,accuracy) {}
-  };
+	};
 
 	class RidderRootFinder : public RootFinder {
-  protected:
-    double find() {
+	protected:
+		double find() {
 			// Vérifications d'usage
 			if (m_xmin >= m_xmax) {
-			  throw new RootFinderException(m_InvalidRange,0,Range(m_xmin,m_xmax),0.0);						// Mauvaise plage de recherche
+				throw RootFinderException(m_InvalidRange,0,Range(m_xmin,m_xmax),0.0);						// Mauvaise plage de recherche
 			}
-      double ans(-1.11e30), xh(m_xmax),xl(m_xmin);
+			double ans(-1.11e30), xh(m_xmax),xl(m_xmin);
 			double fh(m_f(m_xmax)),fl(m_f(m_xmin)),fm,fnew,s,xm,xnew;
 			int iiter=0;
 			if (sign(fl) != sign(fh)) {
@@ -237,13 +241,13 @@ namespace RootFinding
 					fm=m_f(xm);
 					s=sqrt(fm*fm-fl*fh);
 					if(s==0.0) {
-					  return (ans);
+						return (ans);
 					}
 					// Updating formula
 					xnew=xm+(xm-xl)*((fl>=fh?1.0:-1.0)*fm/s);
 					// Maybe the new value is the good one
 					if(fabs(xnew-ans) <= m_Accuracy) {
-					  return (ans);
+						return (ans);
 					}
 					// Store this new point
 					ans=xnew;
@@ -260,38 +264,38 @@ namespace RootFinding
 						xl=ans;
 						fl=fnew;
 					} else {
-					  throw new RootFinderException(m_RootNotFound, iiter, Range(m_xmin,m_xmax), 0.0);
+						throw RootFinderException(m_RootNotFound, iiter, Range(m_xmin,m_xmax), 0.0);
 					}
 					if(fabs(xh-xl) <= m_Accuracy) {
-					  return (ans);
+						return (ans);
 					}
 				}
-				throw new RootFinderException(m_AccuracyNotReached,iiter,Range(m_xmin,m_xmax),fabs(xh-xl));									// nombre d'itérations autorisé dépassé
+				throw RootFinderException(m_AccuracyNotReached,iiter,Range(m_xmin,m_xmax),fabs(xh-xl));									// nombre d'itérations autorisé dépassé
 			} else {
 				if(fl==0.0) {
-				  return (m_xmin);
+					return (m_xmin);
 				}
 				if(fh==0.0) {
-				  return (m_xmax);
+					return (m_xmax);
 				}
 			}
-			throw new RootFinderException(m_AccuracyNotReached,iiter,Range(m_xmin,m_xmax),fabs(xh-xl));									// nombre d'itérations autorisé dépassé
+			throw RootFinderException(m_AccuracyNotReached,iiter,Range(m_xmin,m_xmax),fabs(xh-xl));									// nombre d'itérations autorisé dépassé
 		}
 	public:
 		RidderRootFinder(function_type f) : RootFinder(f) {}
 		RidderRootFinder(function_type f,int niter,double pres) : RootFinder(f,niter,pres) {}
-  };
+	};
 
 	class NewtonRootFinder : public RootFinder
 	{
-  protected:
+	protected:
 		function_type m_df;
 
 		double find() {
 			double dx(0.0),x;
 			const double xacc(1.0e-5);
 			if (m_xmin >= m_xmax) {
-        throw new RootFinderException(m_RootNotFound,0,Range(m_xmin, m_xmax), 0.0);
+				throw RootFinderException(m_RootNotFound,0,Range(m_xmin, m_xmax), 0.0);
 			}
 			x=0.5*(m_xmin+m_xmax);
 			int iiter=0;
@@ -299,28 +303,28 @@ namespace RootFinding
 				dx=m_f(x)/m_df(x);
 				x-=dx;
 				if (sign(m_xmin-x) != sign(x-m_xmax)) {
-				  throw new RootFinderException(m_InvalidRange,iiter,Range(x,x+dx),fabs(dx));
+					throw RootFinderException(m_InvalidRange,iiter,Range(x,x+dx),fabs(dx));
 				}
 				if (fabs(dx) < xacc) return x;
 			}
 			// L'algorithme a dépassé le nombre d'itérations autorisé
-			throw new RootFinderException(m_InvalidRange,iiter,Range(x,x+dx),fabs(dx));
+			throw RootFinderException(m_InvalidRange,iiter,Range(x,x+dx),fabs(dx));
 		}
 	public:
-	  NewtonRootFinder(function_type f, function_type df) : RootFinder(f) {
-	    m_df=df;
-	  }
+		NewtonRootFinder(function_type f, function_type df) : RootFinder(f) {
+			m_df=df;
+		}
 
 		NewtonRootFinder(function_type f, function_type df,int niter,double pres) : RootFinder(f,niter,pres) {
 			m_df=df;
 		}
-  };
+	};
 
-  class FalsePositionRootFinder : public RootFinder {
-  protected:
-    double Find() {
+	class FalsePositionRootFinder : public RootFinder {
+	protected:
+		double find() {
 			double x1=m_xmin,x2=m_xmax,fl=m_f(x1),fh=m_f(x2),xl,xh,dx,del,f,rtf;
-			if(fl*fh>0.0) throw new RootFinderException(m_RootNotBracketed,0,Range(x1,x2),0.0);
+			if(fl*fh>0.0) throw RootFinderException(m_RootNotBracketed,0,Range(x1,x2),0.0);
 			if(fl<0.0) {
 				xl=x1;
 				xh=x2;
@@ -346,24 +350,23 @@ namespace RootFinding
 				dx=xh-xl;
 				if(fabs(del)<m_Accuracy||f==0.0) return rtf;
 			}
-			throw new RootFinderException(m_RootNotFound,iiter,Range(xl,xh),m_Accuracy);
+			throw RootFinderException(m_RootNotFound,iiter,Range(xl,xh),m_Accuracy);
 		}
 	public:
 		FalsePositionRootFinder(function_type f) : RootFinder(f) {}
 		FalsePositionRootFinder(function_type f,int niter,double pres) : RootFinder(f,niter,pres) {}
-
 	};
 
 	class BrentRootFinder : public RootFinder {
-  protected:
-    double Find() {
-      double a(m_xmin), b(m_xmax), c(m_xmax), d(0.0), e(0.0);
-      double min1, min2, p, q, r, s, tol1;
+	protected:
+		double find() {
+			double a(m_xmin), b(m_xmax), c(m_xmax), d(0.0), e(0.0);
+			double min1, min2, p, q, r, s, tol1;
 			double fa(m_f(a)), fb(m_f(b)), fc(fb), xm(std::numeric_limits<double>::signaling_NaN());
 
 			// Vérifications d'usage
 			if (m_xmin >= m_xmax || sign(fa) == sign(fb)) {
-			  throw new RootFinderException(m_InvalidRange,0,Range(m_xmin,m_xmax),0.0);
+				throw RootFinderException(m_InvalidRange,0,Range(m_xmin,m_xmax),0.0);
 			}
 			int iiter=0;
 			for (; iiter < m_NbIterMax; ++iiter) {
@@ -375,8 +378,8 @@ namespace RootFinding
 				if (fabs(e)  >= tol1 && (fabs(fa) >= fabs(fa))) {
 					s=fb/fa;
 					if (a == c) {
-					  p=2.0*xm*s;
-					  q=1.0-s;
+						p=2.0*xm*s;
+						q=1.0-s;
 					} else {
 						q=fa/fc;
 						r=fb/fc;
@@ -406,12 +409,12 @@ namespace RootFinding
 				fb=m_f(b);
 			}
 			// L'algorithme a dépassé le nombre d'itérations autorisé
-			throw new RootFinderException(m_AccuracyNotReached,iiter,Range(a,b),fabs(xm));
+			throw RootFinderException(m_AccuracyNotReached,iiter,Range(a,b),fabs(xm));
 		}
 	public:
 		BrentRootFinder(function_type f) : RootFinder(f) {}
 		BrentRootFinder(function_type f,int niter,double pres) : RootFinder(f,niter,pres) {}
-  };
+	};
 
 	const double RootFinder::d_Accuracy = 9.99200722162641E-16;
 	const char* RootFinder::m_InvalidRange="Invalid range while finding root";
