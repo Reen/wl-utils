@@ -17,10 +17,12 @@ namespace io = boost::iostreams;
 struct MatrixHeader {
   uint32_t version;
   uint32_t matrix_type;
+  uint32_t timestep;
   uint32_t githead_strlen;
   bool operator==(const MatrixHeader &rhs) const {
     return (version == rhs.version
         && matrix_type == rhs.matrix_type
+        && timestep == rhs.timestep
         && githead_strlen == rhs.githead_strlen);
   }
 };
@@ -174,6 +176,7 @@ public:
   void print_to_stream(std::ostream& os) {
     os
     << "# towhee   " << data.githead                   << "\n"
+    << "# timestep " << data.header.timestep           << "\n"
     << "# nmin     " << data.settings.min_particles    << "\n"
     << "# nmax     " << data.settings.max_particles    << "\n"
     << "# emin     " << data.settings.min_energy       << "\n"
