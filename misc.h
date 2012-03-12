@@ -11,6 +11,7 @@ CompressionType getFileCompression(std::string filepath);
 void openMatrixFileRead(boost::iostreams::filtering_istream &in, std::string filepath, CompressionType ct);
 void openMatrixFileWrite(boost::iostreams::filtering_ostream &out, std::string filepath, CompressionType ct);
 std::string generateOutputFilename(std::string infile, std::string tag);
+std::string generateOutputPrefix(std::string infile, std::string tag);
 bool fileLimitReached(std::size_t num_files);
 void checkMatrixHeader(const MatrixHeader &, uint32_t, uint32_t,bool check_matrix_type = true);
 

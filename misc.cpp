@@ -72,6 +72,22 @@ std::string generateOutputFilename(std::string infile, std::string tag) {
   }
 }
 
+std::string generateOutputPrefix(std::string infile, std::string tag) {
+  fs::path inpath(infile);
+  inpath = fs::absolute(inpath);
+  std::string infile_path(inpath.parent_path().string()),
+              infile_name(inpath.filename().string()),
+              outfile;
+  static const boost::regex e("\\..+");
+  outfile = boost::regex_replace(infile_name, e, "."+tag, boost::match_default | boost::format_sed);
+  State::lease s;
+  if (s->have_working_directory()) {
+    return s->working_directory() + outfile;
+  } else {
+    return infile_path + "/" + outfile;
+  }
+}
+
 bool fileLimitReached(std::size_t num_files) {
   struct rlimit limit;
   if (getrlimit(RLIMIT_NOFILE, &limit) != 0) {
