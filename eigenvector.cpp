@@ -93,7 +93,8 @@ void broad_histogram(QMatrix<double>::matrix_t & mat,
 
 void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
                                    QMatrix<double>::dos_matrix_t & dos,
-                                   QMatrix<double>::dos_matrix_t & dos_old) {
+                                   QMatrix<double>::dos_matrix_t & dos_old,
+                                   std::string prefix) {
   std::cerr << "calculating dos via power iteration" << std::endl;
   typedef ublas::matrix<bool> bool_matrix_t;
   typedef ublas::banded_matrix< std::vector<std::pair<std::size_t,std::size_t> > > pair_matrix_t;
@@ -182,7 +183,7 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
     }
 
     if (converged) {
-      print_dos("dos", dos, i, false);
+      print_dos(prefix, dos, i, false);
       break;
     }
 
@@ -194,7 +195,7 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
                 << std::setw(12) << std::right << (dist-1.0)
                 << std::setw(10) << std::right << num_filled
                 << std::endl;
-      print_dos("dos", dos, i, false);
+      print_dos(prefix, dos, i, false);
       t.restart();
     }
 
@@ -273,7 +274,9 @@ void calcdos(std::string filepath) {
   }
   print_dos("dos", dos_old, 0);
   */
-  calculate_dos_power_iteration(qd.matrix(), dos, dos_old);
+
+  std::string prefix;
+  calculate_dos_power_iteration(qd.matrix(), dos, dos_old, generateOutputPrefix(filepath, "dos"));
 
   //io::filtering_ostream out;
   //std::string outfilepath = generateOutputFilename(filepath);
