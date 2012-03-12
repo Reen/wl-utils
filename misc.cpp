@@ -1,5 +1,6 @@
 #include "misc.h"
 #include <stdio.h>
+#include <sys/resource.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/file.hpp>
@@ -14,10 +15,15 @@ namespace io = boost::iostreams;
 namespace fs = boost::filesystem;
 
 CompressionType getFileCompression(std::string filepath) {
+  size_t ierr;
   char head[4], gzip[] = {0x1f, 0x8b, 0x08}, bzip[] = {0x42, 0x5A, 0x68};
   // read first 3 bytes and check whether the file is uncompressed, gzip or bzip2 compressed.
   FILE * test = fopen(filepath.c_str(), "rb");
-  fread(head, 1, 3, test);
+  ierr = fread(head, 3, 1, test);
+  if (ierr != 1) {
+    perror("Could not determin compression type of file");
+    exit(1);
+  }
   fclose(test);
   if (head[0] == gzip[0] && head[1] == gzip[1] && head[2] == gzip[2]) {
     return CT_GZIP;
