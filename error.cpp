@@ -198,7 +198,6 @@ int main (int argc, char *argv[])
               << " for arg " << e.argId() << std::endl;
     return -1;
   }
-
   if (fs::is_regular_file(input_file)) {
     fs::path full_path(input_file);
     ErrorTask t(1.0, 1.0, 5.0, full_path.directory_string());
@@ -208,8 +207,12 @@ int main (int argc, char *argv[])
 
   fs::path full_path( fs::initial_path<fs::path>() );
   if (fs::is_directory(input_file) && input_file != ".") {
-    char resolved_path[1000];
-    realpath(input_file.c_str(), resolved_path);
+    char resolved_path[PATH_MAX];
+    char *res = realpath(input_file.c_str(), resolved_path);
+    if (res == NULL) {
+      std::cerr << "Could not resolve pathname." << std::endl;
+      return 1;
+    }
     full_path = fs::system_complete( fs::path(resolved_path) );
   }
 
