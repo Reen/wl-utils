@@ -18,7 +18,7 @@ namespace ublas = boost::numeric::ublas;
 
 void print_dos(const std::string& prefix,
                const QMatrix<double>::dos_matrix_t& dos,
-               std::size_t iteration, bool print_all=true) {
+               std::size_t iteration, bool print_all=true, bool already_log=false) {
   char filename[5000];
   State::lease s;
   snprintf(filename, 5000, "%s%s.%06lu.dat.gz",
@@ -47,12 +47,19 @@ void print_dos(const std::string& prefix,
     }
     for (std::size_t j = 0; j < dos.size2(); ++j) {
       if(print_all || dos(i,j) > 0) {
-        double log_dos = log(dos(i,j));
+        double ndos, log_dos;
+        if (already_log) {
+          log_dos = dos(i,j);
+          ndos    = exp(dos(i,j));
+        } else {
+          log_dos = log(dos(i,j));
+          ndos    = dos(i,j);
+        }
         out << std::setw(20) << std::right << n
             << std::setw(20) << std::right << s->bin_to_energy(j)
             << std::setw(20) << std::right << (log_dos + fakln)
             << std::setw(20) << std::right << log_dos
-            << std::setw(20) << std::right << dos(i,j)
+            << std::setw(20) << std::right << ndos
             << "\n";
       }
     }
@@ -244,8 +251,8 @@ void calculate_dos_gth(QMatrix<double>::inner_matrix_t inner_mat, // copy
     //std::cout << ": "<< dos.data()[i] << "\n";
     dos[i] = dos[i-1] + log(dos[i]);
   }
-  for (std::size_t ei = 0; ei < inner_cols; ++ei) {
-    dos(ei) = exp(dos(ei)-5);
+  for (std::size_t i = 0; i < dos.size(); ++i) {
+      dos[i] = -dos[i];
   }
   //print_dos("gth", dos, 4);
 }
@@ -276,7 +283,15 @@ void calcdos(std::string filepath) {
   */
 
   std::string prefix;
-  calculate_dos_power_iteration(qd.matrix(), dos, dos_old, generateOutputPrefix(filepath, "dos"));
+  if (qd.outer_cols() == 1 && qd.outer_rows() == 1) {
+    ublas::matrix_row< QMatrix<double>::dos_matrix_t > mr(dos, 0);
+    calculate_dos_gth(qd(0,0), mr);
+    prefix = generateOutputPrefix(filepath, "gth");
+    print_dos(prefix, dos, 0, true, true);
+  }
+
+  prefix = generateOutputPrefix(filepath, "dos");
+  calculate_dos_power_iteration(qd.matrix(), dos, dos_old, prefix);
 
   //io::filtering_ostream out;
   //std::string outfilepath = generateOutputFilename(filepath);
