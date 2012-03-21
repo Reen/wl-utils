@@ -11,6 +11,7 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/operation.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/progress.hpp>
 
 namespace io = boost::iostreams;
@@ -209,6 +210,111 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
     dos_old.swap(dos);
     dist_old = dist;
   }
+}
+
+template <class T>
+class basic_iteration {
+public:
+  basic_iteration(std::size_t max_iter, double relative_eps)
+      : i(0), max_iter_(max_iter), relative_eps_(relative_eps) {}
+
+  inline bool converged(T iter1, T iter1end, T iter2, double & dist) {
+    bool converged = true;
+    for (;iter1 < iter1end;
+         ++iter1, ++iter2) {
+      if (*iter1 > 0) {
+        if (converged && fabs((*iter2)/(*iter1)-1.0) > relative_eps_) {
+          dist = (*iter2)/(*iter1);
+          converged = false;
+          break;
+        }
+      }
+    }
+    return converged;
+  }
+
+  inline void operator++() { ++i; }
+  inline bool first() { return i == 0; }
+  inline std::size_t iterations() { return i; }
+  inline double relative_tolerance() { return relative_eps_; }
+  inline std::size_t max_iterations() { return max_iter_; }
+protected:
+  std::size_t i;
+  std::size_t max_iter_;
+  double relative_eps_;
+};
+
+void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
+                          QMatrix<double>::dos_matrix_t & dos,
+                          QMatrix<double>::dos_matrix_t & dos_old,
+                          std::string prefix) {
+  std::size_t outer_rows(mat.size1());
+  std::size_t outer_cols(mat.size2());
+  std::size_t inner_rows(mat(0,0).size1());
+  std::size_t inner_cols(mat(0,0).size2());
+  std::size_t nonz(0);
+  std::cout << "counting nonzeros:" << std::endl;
+  for (std::size_t nj = 0; nj < outer_rows; ++nj)
+  {
+    int s_nj = int(nj);
+    for (std::size_t ni = std::max(s_nj-1, 0); ni < std::min(nj+2, outer_cols); ++ni)
+    {
+      nonz += (inner_cols*inner_rows) - std::count(mat(ni,nj).data().begin(), mat(ni,nj).data().end(), 0.0);
+    }
+  }
+  std::cout << nonz << std::endl;
+  boost::numeric::ublas::compressed_matrix<double> q_mat(inner_cols*outer_cols, inner_rows*outer_rows, nonz);
+  std::cout << "remapping" << std::endl;
+  for (std::size_t nj = 0; nj < outer_rows; ++nj)
+  {
+    int s_nj = int(nj);
+    for (std::size_t ni = std::max(s_nj-1, 0); ni < std::min(nj+2, outer_cols); ++ni)
+    {
+      for (std::size_t ej = 0; ej < inner_rows; ++ej)
+      {
+        for (std::size_t ei = 0; ei < inner_rows; ++ei)
+        {
+          if(mat(ni,nj)(ei,ej) != 0) {
+              q_mat(inner_rows*nj+ej, inner_cols*ni+ei) = mat(ni,nj)(ei,ej);
+          }
+        }
+      }
+    }
+  }
+  std::cout << "power iteration " << q_mat.nnz() << std::endl;
+  boost::numeric::ublas::vector<double> t1(inner_rows*outer_rows),t2(inner_rows*outer_rows),t3(inner_rows*outer_rows);
+  std::fill(t1.begin(), t1.end(), 1.0/t1.size());
+  double lambda, residual, dist;
+  std::size_t i(0);
+  basic_iteration<ublas::vector<double>::iterator> iter(100000, 1e-8);
+  boost::timer t;
+  do
+  {
+    i++;
+    t3 = t1;
+    //std::cout << i << t1 << "\n" << t2 << std::endl;
+    boost::numeric::ublas::axpy_prod(q_mat, t1, t2, true);
+    lambda = ublas::inner_prod(t1,t2);
+    t1 *= -lambda;
+    t1 += t2;
+    residual = ublas::norm_2(t1);
+    t1 = t2/ublas::norm_2(t2);
+    if (i%1000 == 0) {
+      std::cout << "I: "
+                << std::setw(10) << std::right << i
+                << std::setw(10) << std::right << (1000.0/t.elapsed())
+                << " iterations/second, d: "
+                << std::setw(12) << std::right << (dist-1.0)
+                << std::setw(10) << std::right << lambda
+                << std::setw(12) << std::right << residual
+                << std::endl;
+      std::copy(t1.begin(), t1.end(), dos.data().begin());
+      print_dos(prefix, dos, i, false);
+      t.restart();
+    }
+  } while(!iter.converged(t3.begin(), t3.end(), t1.begin(), dist));
+  std::copy(t1.begin(), t1.end(), dos.data().begin());
+  print_dos(prefix, dos, i, false);
 }
 
 /**
