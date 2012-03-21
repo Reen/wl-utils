@@ -16,8 +16,8 @@ from optparse import OptionParser
 row_length = 24
 
 def mat_get_header(infile, do_print = True):
-    data = infile.read(12)
-    version, filetype, vstrlen = struct.unpack("=III", data)
+    data = infile.read(16)
+    version, filetype, timestep, vstrlen = struct.unpack("=IIII", data)
     if version != 1:
         raise Exception("Unknown parq matrix file version.")
     if filetype == 1:
@@ -37,6 +37,7 @@ def mat_get_header(infile, do_print = True):
     data = {
         "version"       : version,
         "filetype"      : filetype,
+        "timestep"      : timestep,
         "githead"       : githead,
         "min_particles" : min_particles,
         "max_particles" : max_particles,
