@@ -345,7 +345,20 @@ void calculate_dos_gth(QMatrix<double>::inner_matrix_t inner_mat, // copy
       }
     }
   }
-  // now just do eqn 33 of M. Fenwick - J. Chem. Phys. 125, 144905
+  /* Following two sections are equivalent. The first is the straight forward
+   * implementation. The second one is a variant especially for situations where
+   * over- and underflows occur.
+   */
+  // now just do eqn 32 of M. Fenwick - J. Chem. Phys. 125, 144905, 2006
+  std::fill(dos.begin(), dos.end(), 0.0);//dos.clear();
+  dos[0] = 1;
+  for (std::size_t i = 1; i < inner_rows; ++i) {
+    for (std::size_t j = 0; j < i; ++j) {
+      dos[i] += dos[j] * inner_mat(j,i);
+    }
+  }
+  return;
+  // now just do eqn 33 of M. Fenwick - J. Chem. Phys. 125, 144905, 2006
   std::fill(dos.begin(), dos.end(), 0.0);//dos.clear();
   dos[0] = 1;
   for (std::size_t i = 1; i < inner_rows; ++i) {
