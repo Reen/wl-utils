@@ -275,7 +275,7 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
         for (std::size_t ei = 0; ei < inner_rows; ++ei)
         {
           if(mat(ni,nj)(ei,ej) != 0) {
-              q_mat(inner_rows*nj+ej, inner_cols*ni+ei) = mat(ni,nj)(ei,ej);
+              q_mat(inner_cols*ni+ei, inner_rows*nj+ej) = mat(ni,nj)(ei,ej);
           }
         }
       }
