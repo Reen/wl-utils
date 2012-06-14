@@ -41,20 +41,6 @@ void do_normalization(QMatrix<int32_t>::matrix_t & imat,
       } // else -> all values in the column are zero so we do nothing
     }
   }
-  /*for (std::size_t nj = 0; nj < outer_rows; ++nj)
-  {
-    int s_nj = int(nj);
-    for (std::size_t ni = std::max(s_nj-1, 0); ni < std::min(nj+2, outer_cols); ++ni)
-    {
-      if (ni != nj && ni < nj) {
-        dmat(ni, nj).swap(dmat(nj,ni));
-        dmat(ni, nj) = trans(dmat(ni,nj));
-        dmat(nj, ni) = trans(dmat(nj,ni));
-      } else if(ni == nj) {
-        dmat(ni, nj) = trans(dmat(ni,nj));
-      }
-    }
-  }*/
 }
 
 void normalize(std::string filepath) {
