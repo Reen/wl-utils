@@ -311,7 +311,7 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
                 << " iterations/second, d: "
                 << std::setw(12) << std::right << (dist-1.0)
                 << std::setw(10) << std::right << lambda
-                << std::setw(12) << std::right << residual
+                << std::setw(14) << std::right << residual
                 << std::endl;
       std::copy(t1.begin(), t1.end(), dos.data().begin());
       print_dos(prefix, dos, i, false);
