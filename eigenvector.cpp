@@ -401,13 +401,6 @@ void calcdos(std::string filepath) {
   QMatrix<double>::dos_matrix_t dos(s->n_particles(),s->n_energy());
   QMatrix<double>::dos_matrix_t dos_old(s->n_particles(),s->n_energy());
   std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
-  /*
-  for (size_t i = 0; i < s->n_particles(); i++) {
-    ublas::matrix_row< QMatrix<double>::dos_matrix_t > mr(dos_old, i);
-    calculate_dos_gth(qd.matrix()(i,i), mr);
-  }
-  print_dos("dos", dos_old, 0);
-  */
 
   std::string prefix;
   if (qd.outer_cols() == 1 && qd.outer_rows() == 1) {
@@ -421,10 +414,5 @@ void calcdos(std::string filepath) {
   //calculate_dos_power_iteration(qd.matrix(), dos, dos_old, prefix);
   prefix = generateOutputPrefix(filepath, "spa");
   calculate_dos_sparse(qd.matrix(), dos, dos_old, prefix);
-
-  //io::filtering_ostream out;
-  //std::string outfilepath = generateOutputFilename(filepath);
-  //openMatrixFileWrite(out, outfilepath, ct);
-  //s->save_to(out);
 }
 
