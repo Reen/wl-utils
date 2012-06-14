@@ -9,7 +9,7 @@ How it works:
 
     becomes:
     error.dat:
-    |   x    y    z_mean z_var|
+    |   x    y    z_mean  z_var  z_min  z_max|
 
 Limitations:
     - data files have to contain data marked up in columns
@@ -40,6 +40,26 @@ class Ddict(dict):
         return dict.__getitem__(self, key)
 
 def add(x,y): return x+y
+
+"""
+compensated variance function from wikipedia
+http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+"""
+def compensated_variance(data):
+    n = 0
+    sum1 = 0
+    for x in data:
+        n = n + 1
+        sum1 = sum1 + x
+    mean = sum1/n
+ 
+    sum2 = 0
+    sum3 = 0
+    for x in data:
+        sum2 = sum2 + (x - mean)**2
+        sum3 = sum3 + (x - mean)
+    variance = (sum2 - sum3**2/n)/(n - 1)
+    return ( mean,variance,n )
 
 def main(argv):
     usage = "usage: %prog [options] files"
@@ -124,19 +144,16 @@ def main(argv):
         v = data[k]
         dataline = ''
         for kk,vv in v.items():
-            mean = 0.0
-            varianceAcc = 0.0
-            count = 0
-            for vvv in vv:
-                mean += vvv
-                varianceAcc += (vvv*vvv)
-                count+=1
+            try:
+                mean, variance, count = compensated_variance(vv)
+            except:
+                continue;
+                pass
             if count >= required_points:
-                variance = (varianceAcc-(mean*mean)/count)/(count-1.0)
-                mean /= count
-                data[k] = [mean, variance]
-                #print '%10s%10s%20g%20g' % ( k,kk,mean,variance )
-                dataline += ('%20g%20g' % ( mean,variance ))
+                min_v = min(vv)
+                max_v = max(vv)
+                data[k] = [mean, variance, min_v, max_v]
+                dataline += ('%20g%20g%20g%20g' % ( mean,variance,min_v,max_v ))
         if len(dataline) > 0:
             outfile.write('%s%s\n' % (k,dataline))
 
