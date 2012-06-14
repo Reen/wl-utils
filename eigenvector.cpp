@@ -410,6 +410,7 @@ void calcdos(std::string filepath) {
     print_dos(prefix, dos, 0, true, true);
   }
 
+  std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
   //prefix = generateOutputPrefix(filepath, "dos");
   //calculate_dos_power_iteration(qd.matrix(), dos, dos_old, prefix);
   prefix = generateOutputPrefix(filepath, "spa");
