@@ -113,6 +113,7 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
   std::size_t inner_rows(mat(0,0).size1());
   std::size_t inner_cols(mat(0,0).size2());
   std::size_t num_filled;
+  std::size_t output_f = 1000;
   bool_matrix_t zero_mat(outer_rows, inner_rows);
   pair_matrix_t pair_mat(outer_rows, outer_cols, 1, 1);
   zero_mat.clear();
@@ -190,21 +191,24 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
       }
     }
 
-    if (converged) {
+    if (converged || i == 999999) {
       print_dos(prefix, dos, i, false);
       break;
     }
 
-    if (i%1000 == 0) {
+    if (i%output_f == 0) {
       std::cout << "I: "
                 << std::setw(10) << std::right << i
-                << std::setw(10) << std::right << (1000.0/t.elapsed())
+                << std::setw(10) << std::right << ((double)output_f/t.elapsed())
                 << " iterations/second, d: "
                 << std::setw(12) << std::right << (dist-1.0)
                 << std::setw(10) << std::right << num_filled
                 << std::endl;
       print_dos(prefix, dos, i, false);
       t.restart();
+      if ( (10*output_f) == i ) {
+        output_f *= 10;
+      }
     }
 
     dos_old.swap(dos);
@@ -253,6 +257,7 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
   std::size_t inner_rows(mat(0,0).size1());
   std::size_t inner_cols(mat(0,0).size2());
   std::size_t nonz(0);
+  std::size_t output_f = 100;
   std::cout << "counting nonzeros:" << std::endl;
   for (std::size_t nj = 0; nj < outer_rows; ++nj)
   {
@@ -299,10 +304,10 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
     t1 += t2;
     residual = ublas::norm_2(t1);
     t1 = t2/ublas::norm_2(t2);
-    if (i%1000 == 0) {
+    if (i%output_f == 0) {
       std::cout << "I: "
                 << std::setw(10) << std::right << i
-                << std::setw(10) << std::right << (1000.0/t.elapsed())
+                << std::setw(10) << std::right << ((double)output_f/t.elapsed())
                 << " iterations/second, d: "
                 << std::setw(12) << std::right << (dist-1.0)
                 << std::setw(10) << std::right << lambda
@@ -311,6 +316,9 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
       std::copy(t1.begin(), t1.end(), dos.data().begin());
       print_dos(prefix, dos, i, false);
       t.restart();
+      if ( (10*output_f) == i ) {
+        output_f *= 10;
+      }
     }
   } while(!iter.converged(t3.begin(), t3.end(), t1.begin(), dist));
   std::copy(t1.begin(), t1.end(), dos.data().begin());
