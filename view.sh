@@ -9,12 +9,7 @@ for (( i=0; i<${#args[@]}; i++ )); do
 	fi
 	dezip=""
 	if [[ "${file}" =~ ".gz" ]]; then
-		if which zcat &> /dev/null; then
-			dezip="< zcat "
-		fi
-		if which gzcat &> /dev/null; then
-			dezip="< gzcat "
-		fi
+			dezip="<gzip -cd "
 	fi
 	command="${command} '${dezip}${file}' w d"
 	let last=$#-1
