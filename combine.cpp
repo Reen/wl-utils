@@ -23,7 +23,7 @@ namespace ublas = boost::numeric::ublas;
 int combine(std::vector<std::string> files) {
   // local variables
   uint32_t tmp, version = 0;
-  uint32_t mtype, ghstrlen;
+  uint32_t mtype, timestep, ghstrlen;
   uint32_t outer_cols, outer_rows, inner_cols, inner_rows;
   char githead[100];
   const std::size_t settingslen = 4 * sizeof(uint32_t) + 4 * sizeof(double);
@@ -62,6 +62,8 @@ int combine(std::vector<std::string> files) {
     if (mtype != 1) {
       throw std::runtime_error("Integer matrix expected.");
     }
+    // timestep
+    ins[i]->read((char*)&timestep, sizeof(timestep));
     // githead strlen
     ins[i]->read((char*)&ghstrlen, sizeof(ghstrlen));
     if (ghstrlen > 100) {
@@ -88,6 +90,7 @@ int combine(std::vector<std::string> files) {
   openMatrixFileWrite(out, outfn, cts[0]);
   out.write((char*)&version, sizeof(version));
   out.write((char*)&mtype, sizeof(mtype));
+  out.write((char*)&timestep, sizeof(timestep));
   out.write((char*)&ghstrlen, sizeof(ghstrlen));
   out.write(githeadref.c_str(), ghstrlen);
   out.write(settings, settingslen);
