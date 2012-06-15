@@ -29,6 +29,7 @@ int main (int argc, char *argv[])
 {
   std::string command, out_filename;
   std::vector<std::string> files;
+  int maxIter;
   try
   {
     using namespace boost::assign;
@@ -49,6 +50,7 @@ int main (int argc, char *argv[])
     TCLAP::ValueArg<std::string> outArg("o","out","Filename for serialized output.",false,"","filename.gz", cmd);
     commandArg.requires("dos") += &nminArg, &nmaxArg, &nEnergyArg, &eminArg, &emaxArg, &volumeArg;
     */
+    TCLAP::ValueArg<int> maxIterArg("i", "maxIter", "Maximum number of iterations for iterative methods", false, 999999, "unsigned integer", cmd);
     TCLAP::ValueArg<std::string> outArg("o","out","Filename or directory for output.",false,"","filename.gz", cmd);
     TCLAP::UnlabeledMultiArg<std::string> filesArg("files","Filenames of matrix files.",true,"filenames", cmd);
 
@@ -58,6 +60,7 @@ int main (int argc, char *argv[])
     command = commandArg.getValue();
     files = filesArg.getValue();
     out_filename = outArg.getValue();
+    maxIter = maxIterArg.getValue();
     if (files.size() > 1) {
       // the user specified multiple input files, interpret -o as output directory
       if (outArg.isSet() && fs::is_directory(out_filename)) {
@@ -91,7 +94,7 @@ int main (int argc, char *argv[])
     }
   } else if (command == "calcdos") {
     for (int i = 0; i < files.size(); i++) {
-      calcdos(files[i]);
+      calcdos(files[i], maxIter);
     }
   } else if (command == "variance") {
     variance(files);

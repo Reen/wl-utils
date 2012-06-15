@@ -102,7 +102,7 @@ void broad_histogram(QMatrix<double>::matrix_t & mat,
 void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
                                    QMatrix<double>::dos_matrix_t & dos,
                                    QMatrix<double>::dos_matrix_t & dos_old,
-                                   std::string prefix) {
+                                   std::string prefix, int maxIter) {
   std::cerr << "calculating dos via power iteration" << std::endl;
   typedef ublas::matrix<bool> bool_matrix_t;
   typedef ublas::banded_matrix< std::vector<std::pair<std::size_t,std::size_t> > > pair_matrix_t;
@@ -191,7 +191,7 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
       }
     }
 
-    if (converged || i == 999999) {
+    if (converged || i == maxIter) {
       print_dos(prefix, dos, i, false);
       break;
     }
@@ -224,6 +224,10 @@ public:
 
   inline bool converged(T iter1, T iter1end, T iter2, double & dist) {
     bool converged = true;
+
+    // break after maximum number of iterations
+    if (i == max_iter_) return true;
+
     for (;iter1 < iter1end;
          ++iter1, ++iter2) {
       if (*iter1 > 0) {
@@ -237,9 +241,9 @@ public:
     return converged;
   }
 
-  inline void operator++() { ++i; }
+  inline basic_iteration<T>& operator++() { ++i; }
   inline bool first() { return i == 0; }
-  inline std::size_t iterations() { return i; }
+  inline const std::size_t& iterations() const { return i; }
   inline double relative_tolerance() { return relative_eps_; }
   inline std::size_t max_iterations() { return max_iter_; }
 protected:
@@ -251,7 +255,7 @@ protected:
 void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
                           QMatrix<double>::dos_matrix_t & dos,
                           QMatrix<double>::dos_matrix_t & dos_old,
-                          std::string prefix) {
+                          std::string prefix, int maxIter) {
   std::size_t outer_rows(mat.size1());
   std::size_t outer_cols(mat.size2());
   std::size_t inner_rows(mat(0,0).size1());
@@ -290,12 +294,12 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
   boost::numeric::ublas::vector<double> t1(inner_rows*outer_rows),t2(inner_rows*outer_rows),t3(inner_rows*outer_rows);
   std::fill(t1.begin(), t1.end(), 1.0/t1.size());
   double lambda, residual, dist;
-  std::size_t i(0);
-  basic_iteration<ublas::vector<double>::iterator> iter(100000, 1e-8);
+
+  basic_iteration<ublas::vector<double>::iterator> iter(maxIter, 1e-8);
   boost::timer t;
   do
   {
-    i++;
+    ++iter;
     t3 = t1;
     //std::cout << i << t1 << "\n" << t2 << std::endl;
     boost::numeric::ublas::axpy_prod(q_mat, t1, t2, true);
@@ -304,9 +308,9 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
     t1 += t2;
     residual = ublas::norm_2(t1);
     t1 = t2/ublas::norm_2(t2);
-    if (i%output_f == 0) {
+    if (iter.iterations()%output_f == 0) {
       std::cout << "I: "
-                << std::setw(10) << std::right << i
+                << std::setw(10) << std::right << iter.iterations()
                 << std::setw(10) << std::right << ((double)output_f/t.elapsed())
                 << " iterations/second, d: "
                 << std::setw(12) << std::right << (dist-1.0)
@@ -314,15 +318,15 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
                 << std::setw(14) << std::right << residual
                 << std::endl;
       std::copy(t1.begin(), t1.end(), dos.data().begin());
-      print_dos(prefix, dos, i, false);
+      print_dos(prefix, dos, iter.iterations(), false);
       t.restart();
-      if ( (10*output_f) == i ) {
+      if ( (10*output_f) == iter.iterations() ) {
         output_f *= 10;
       }
     }
   } while(!iter.converged(t3.begin(), t3.end(), t1.begin(), dist));
   std::copy(t1.begin(), t1.end(), dos.data().begin());
-  print_dos(prefix, dos, i, false);
+  print_dos(prefix, dos, iter.iterations(), false);
 }
 
 /**
@@ -384,7 +388,7 @@ void calculate_dos_gth(QMatrix<double>::inner_matrix_t inner_mat, // copy
   //print_dos("gth", dos, 4);
 }
 
-void calcdos(std::string filepath) {
+void calcdos(std::string filepath, int maxIter) {
   CompressionType ct = getFileCompression(filepath);
 
   io::filtering_istream in;
@@ -412,8 +416,8 @@ void calcdos(std::string filepath) {
 
   std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
   //prefix = generateOutputPrefix(filepath, "dos");
-  //calculate_dos_power_iteration(qd.matrix(), dos, dos_old, prefix);
+  //calculate_dos_power_iteration(qd.matrix(), dos, dos_old, prefix, maxIter);
   prefix = generateOutputPrefix(filepath, "spa");
-  calculate_dos_sparse(qd.matrix(), dos, dos_old, prefix);
+  calculate_dos_sparse(qd.matrix(), dos, dos_old, prefix, maxIter);
 }
 
