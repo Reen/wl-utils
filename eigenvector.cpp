@@ -412,6 +412,11 @@ void calcdos(std::string filepath, int maxIter) {
     calculate_dos_gth(qd(0,0), mr);
     prefix = generateOutputPrefix(filepath, "gth");
     print_dos(prefix, dos, 0, true, true);
+
+    std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
+    prefix = generateOutputPrefix(filepath, "dos");
+    calculate_dos_power_iteration(qd.matrix(), dos, dos_old, prefix, maxIter);
+    return;
   }
 
   std::fill(dos_old.data().begin(), dos_old.data().end(), 1.0/dos_old.data().size());
