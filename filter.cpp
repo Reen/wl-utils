@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 #include <boost/thread/thread.hpp>
-#include <boost/thread/xtime.hpp>
+#include "boost/date_time/posix_time/posix_time_types.hpp"
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/device/file.hpp>
@@ -69,10 +69,7 @@ public:
 			
 			// sleep while there is nothing to do
 			while(__work->size() == 0) {
-				boost::xtime xt;
-				boost::xtime_get(&xt, boost::TIME_UTC);
-				xt.nsec += 10000000;
-				boost::thread::sleep(xt);
+				boost::this_thread::sleep(boost::posix_time::millisec(10));
 				// return if we are finished
 				if(*__done) {
 					return;
