@@ -13,7 +13,7 @@
 #include <boost/iostreams/filter/bzip2.hpp>
 namespace io = boost::iostreams;
 
-#define BOOST_FILESYSTEM_VERSION 2
+//#define BOOST_FILESYSTEM_VERSION 2
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 namespace fs = boost::filesystem;
@@ -200,7 +200,7 @@ int main (int argc, char *argv[])
   }
   if (fs::is_regular_file(input_file)) {
     fs::path full_path(input_file);
-    ErrorTask t(1.0, 1.0, 5.0, full_path.directory_string());
+    ErrorTask t(1.0, 1.0, 5.0, full_path.string());
     std::cout << t.process_file(input_file, output_data);
     return 0;
   }
@@ -216,7 +216,7 @@ int main (int argc, char *argv[])
     full_path = fs::system_complete( fs::path(resolved_path) );
   }
 
-  ErrorTask t(1.0, 1.0, 5.0, full_path.directory_string());
+  ErrorTask t(1.0, 1.0, 5.0, full_path.string());
 
   if(output_file.size() == 0) {
     output_file = "error.dat";
@@ -227,10 +227,10 @@ int main (int argc, char *argv[])
   if (fs::is_directory(full_path)) {
     fs::directory_iterator end_iter;
     std::cout << "processing direcotry "
-              << full_path.directory_string() << "\n"
+              << full_path.string() << "\n"
               << "writing output to "
               << output_file << std::endl;
-    output_file = full_path.directory_string()+'/'+output_file;
+    output_file = full_path.string()+'/'+output_file;
     std::cout << output_file << std::endl;
     std::ofstream out(output_file.c_str());
     for (fs::directory_iterator dir_iter(full_path);
@@ -239,7 +239,10 @@ int main (int argc, char *argv[])
     {
       if (fs::is_regular_file(dir_iter->status())) {
         smatch what;
-        if (regex_match(dir_iter->path().filename(), what, fn_rex)) {
+        if (regex_match(
+              dir_iter->path().filename().string(),
+              what,
+              fn_rex)) {
           out << t.process_file(dir_iter->path().string(), output_data, true);
         }
       }
