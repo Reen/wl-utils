@@ -183,15 +183,15 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
 
     // check wether the iteration has converged
     bool converged = true;
+    dist = 0.0;
     for (QMatrix<double>::dos_matrix_t::array_type::iterator
          i1(dos.data().begin()), i2(dos_old.data().begin());
          i1 < dos.data().end();
          ++i1, ++i2) {
       if (*i1 > 0) {
-        if (converged && fabs((*i2)/(*i1)-1) > crit) {
-          dist = (*i2)/(*i1);
+        if (fabs((*i2)/(*i1)-1) > crit) {
+          dist = std::max(dist, fabs((*i2)/(*i1));
           converged = false;
-          break;
         }
       }
     }
@@ -228,6 +228,7 @@ public:
 
   inline bool converged(T iter1, T iter1end, T iter2, double & dist) {
     bool converged = true;
+    dist = 0.0;
 
     // break after maximum number of iterations
     if (i == max_iter_) return true;
@@ -235,10 +236,9 @@ public:
     for (;iter1 < iter1end;
          ++iter1, ++iter2) {
       if (*iter1 > 0) {
-        if (converged && fabs((*iter2)/(*iter1)-1.0) > relative_eps_) {
-          dist = (*iter2)/(*iter1);
+        if (fabs((*iter2)/(*iter1)-1.0) > relative_eps_) {
+          dist = std::max(dist, fabs((*iter2)/(*iter1)));
           converged = false;
-          break;
         }
       }
     }
