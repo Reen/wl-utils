@@ -147,6 +147,11 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
   num_filled = (zero_mat.data().size() - std::accumulate(zero_mat.data().begin(), zero_mat.data().end(), 0u));
   // begin simple Power Iteration Method
   boost::timer t;
+  std::cout << "#iteration"
+            << std::setw(10) << std::right << "i/s"
+            << std::setw(12) << std::right << "dist"
+            << std::setw(10) << std::right << "n_filled"
+            << std::setw(12) << std::right << "norm" << std::endl;
   while (true) {
     i++;
     dos.clear();
@@ -197,12 +202,11 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
     }
 
     if (i%output_f == 0) {
-      std::cout << "I: "
-                << std::setw(10) << std::right << i
+      std::cout << std::setw(10) << std::right << i
                 << std::setw(10) << std::right << ((double)output_f/t.elapsed())
-                << " iterations/second, d: "
-                << std::setw(12) << std::right << (dist-1.0)
+                << std::setw(12) << std::right << fabs(dist-1.0)
                 << std::setw(10) << std::right << num_filled
+                << std::setw(12) << std::right << n
                 << std::endl;
       print_dos(prefix, dos, i, false);
       t.restart();
