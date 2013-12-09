@@ -10,19 +10,26 @@ void do_normalization(QMatrix<int32_t>::matrix_t & imat,
   std::size_t outer_cols(imat.size2());
   std::size_t inner_rows(imat(0,0).size1());
   std::size_t inner_cols(imat(0,0).size2());
-
-  for (std::size_t ni = 0; ni != outer_cols; ++ni) {
+  for (std::size_t nj = 0; nj < outer_rows-1; ++nj)
+  {
+    imat(nj, nj) = trans(imat(nj, nj));
+    imat(nj+1, nj).swap(imat(nj, nj+1));
+    imat(nj+1, nj) = trans(imat(nj+1, nj));
+    imat(nj, nj+1) = trans(imat(nj, nj+1));
+  }
+  imat(outer_rows-1, outer_rows-1) = trans(imat(outer_rows-1, outer_rows-1));
+  for (std::size_t ni = 0; ni < outer_cols; ++ni) {
     int s_ni = int(ni);
     // minor column
     for (std::size_t ei = 0; ei < inner_cols; ++ei) {
-      double i_sum(0);
+      int64_t i_sum(0);
       // major row
       for (std::size_t nj = std::max(s_ni-1, 0);
            nj < std::min(ni+2, outer_rows);
            ++nj) {
         // minor row
         for (std::size_t ej = 0; ej < inner_rows; ++ej) {
-          i_sum += imat(nj, ni)(ej, ei);
+          i_sum += imat(ni, nj)(ei, ej);
         }
       }
       if (i_sum > 0) {
@@ -34,7 +41,7 @@ void do_normalization(QMatrix<int32_t>::matrix_t & imat,
           // minor row
           for (std::size_t ej = 0; ej < inner_rows; ++ej) {
             // copy and divide by column sum
-            dmat(ni, nj)(ei, ej) =
+            dmat(nj, ni)(ej, ei) =
               static_cast<double>(imat(ni, nj)(ei, ej)) / d_sum;
           }
         }
