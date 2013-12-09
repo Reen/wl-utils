@@ -11,9 +11,11 @@
 
 #include <boost/program_options.hpp>
 
-namespace po = boost::program_options;
-
+#include "misc.h"
 #include "rootfinding.hpp"
+
+namespace po = boost::program_options;
+namespace io = boost::iostreams;
 
 struct Point {
   int N;
@@ -44,7 +46,9 @@ public:
 
   void read(std::string file) {
     // open input ifle
-    std::ifstream fin(file.c_str());
+    io::filtering_istream fin;
+    appendDecompressor(fin, file);
+    fin.push(io::file_source(file, std::ios::in));
     std::string line;
     std::ostringstream cmt(comment);
     while(getline(fin,line)) {
