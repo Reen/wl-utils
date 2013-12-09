@@ -1,9 +1,9 @@
 include( common.pri )
 
-HEADERS  = include/rootfinding.hpp
-SOURCES  = phase.cpp
+HEADERS  = include/rootfinding.hpp misc.h
+SOURCES  = phase.cpp misc.cpp
 LIBS     = 
-BOOST    = -lboost_program_options
+BOOST    = -lboost_program_options -lboost_regex -lboost_thread-mt -lboost_iostreams -lboost_filesystem -lboost_system
 
 include( system.pri )
 

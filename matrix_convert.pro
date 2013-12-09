@@ -12,7 +12,7 @@ SOURCES  = matrix_convert.cpp
 #SOURCES += parallel/gzip_reader.cpp
 #SOURCES += parallel/parq_transform_filter.cpp
 LIBS     = -lz -ltbb
-BOOST    = -lboost_thread -lboost_serialization -lboost_iostreams -lboost_filesystem -lboost_system
+BOOST    = -lboost_thread-mt -lboost_serialization -lboost_iostreams -lboost_filesystem -lboost_system
 
 include( system.pri )
 
