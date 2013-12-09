@@ -297,25 +297,21 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
 
   basic_iteration<ublas::vector<double>::iterator> iter(maxIter, 1e-8);
   boost::timer t;
+  std::cout << "#iteration"
+            << std::setw(10) << std::right << "i/s"
+            << std::setw(12) << std::right << "dist"
+            << std::setw(12) << std::right << "norm" << std::endl;
   do
   {
     ++iter;
-    t3 = t1;
-    //std::cout << i << t1 << "\n" << t2 << std::endl;
     boost::numeric::ublas::axpy_prod(q_mat, t1, t2, true);
-    lambda = ublas::inner_prod(t1,t2);
-    t1 *= -lambda;
-    t1 += t2;
-    residual = ublas::norm_2(t1);
-    t1 = t2/ublas::norm_2(t2);
+    double norm = ublas::norm_1(t2);
+    t2 /= norm;
     if (iter.iterations()%output_f == 0) {
-      std::cout << "I: "
-                << std::setw(10) << std::right << iter.iterations()
+      std::cout << std::setw(10) << std::right << iter.iterations()
                 << std::setw(10) << std::right << ((double)output_f/t.elapsed())
-                << " iterations/second, d: "
-                << std::setw(12) << std::right << (dist-1.0)
-                << std::setw(10) << std::right << lambda
-                << std::setw(14) << std::right << residual
+                << std::setw(12) << std::right << fabs(dist-1.0)
+                << std::setw(12) << std::right << norm
                 << std::endl;
       std::copy(t1.begin(), t1.end(), dos.data().begin());
       print_dos(prefix, dos, iter.iterations(), false);
@@ -324,7 +320,8 @@ void calculate_dos_sparse(QMatrix<double>::matrix_t & mat,
         output_f *= 10;
       }
     }
-  } while(!iter.converged(t3.begin(), t3.end(), t1.begin(), dist));
+    t1.swap(t2);
+  } while(!iter.converged(t2.begin(), t2.end(), t1.begin(), dist));
   std::copy(t1.begin(), t1.end(), dos.data().begin());
   print_dos(prefix, dos, iter.iterations(), false);
 }
