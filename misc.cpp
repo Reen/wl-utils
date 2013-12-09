@@ -3,7 +3,6 @@
 #include <sys/resource.h>
 
 #include <boost/filesystem.hpp>
-#include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/regex.hpp>
@@ -31,6 +30,15 @@ CompressionType getFileCompression(std::string filepath) {
     return CT_BZIP2;
   } else {
     return CT_NONE;
+  }
+}
+
+void appendDecompressor(io::filtering_istream &in, std::string filepath) {
+  CompressionType ct = getFileCompression(filepath);
+  if (ct == CT_GZIP) {
+    in.push(io::gzip_decompressor());
+  } else if (ct == CT_BZIP2) {
+    in.push(io::bzip2_decompressor());
   }
 }
 
