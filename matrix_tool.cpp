@@ -68,6 +68,7 @@ int main (int argc, char *argv[])
       }
     } else  {
       if (outArg.isSet()) {
+        //@todo: add code to work with stdin as source for list of files
         fs::path p(files[0]);
         s->set_working_directory(p.parent_path().string());
       }
