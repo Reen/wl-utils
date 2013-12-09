@@ -151,7 +151,7 @@ def convertmat(opts, infile, filename):
             print prog, '\r',
             sys.stdout.flush()
     print "\n"
-    filename = filename.rsplit('.')[0]
+    filename = filename.rsplit('.', 1)[0]
     out1 = open("%s-mat.mtx" % (filename), "w")
     out2 = open("%s-mat-t.mtx" % (filename), "w")
     out3 = open("%s-eig.mtx" % (filename), "w")
