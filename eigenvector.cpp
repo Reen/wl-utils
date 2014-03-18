@@ -190,7 +190,7 @@ void calculate_dos_power_iteration(QMatrix<double>::matrix_t & mat,
          ++i1, ++i2) {
       if (*i1 > 0) {
         if (fabs((*i2)/(*i1)-1) > crit) {
-          dist = std::max(dist, fabs((*i2)/(*i1));
+          dist = std::max(dist, fabs((*i2)/(*i1)));
           converged = false;
         }
       }
@@ -399,6 +399,7 @@ void calcdos(std::string filepath, int maxIter) {
   if (s->matrix_type() != 2) {
     throw std::runtime_error("Double Matrix expected, different data type found.");
   }
+  s->print_to_stream(std::cout);
   QMatrix<double> qd;
   qd.load_from(in);
   in.pop();

@@ -21,7 +21,7 @@
 
 using namespace std;
 namespace ub = boost::numeric::ublas;
-// ../../svn/towhee-wl/Source/towhee | ../../svn/wl-utils/filter 
+// ../../svn/towhee-wl/Source/towhee | ../../svn/wl-utils/filter
 
 /*
  * $Id: filter.cpp 217 2008-04-10 13:10:23Z rhab $
@@ -61,12 +61,12 @@ class MatrixThread {
 public:
 	MatrixThread(work_type* work, config_type* config, boost::mutex* mutex, bool* done, std::string* config_str)
 	: __work(work), __config(config), __mutex(mutex), __done(done), __config_read(false), __config_str(config_str) { }
-	
+
 	void operator()() {
 		while(true) {
 			// will point to the data we work with
 			stringstream* data;
-			
+
 			// sleep while there is nothing to do
 			while(__work->size() == 0) {
 				boost::this_thread::sleep(boost::posix_time::millisec(10));
@@ -75,28 +75,28 @@ public:
 					return;
 				}
 			}
-						
+
 			// acquire a lock on the work list and fetch some data
 			{
 				boost::mutex::scoped_lock lock(*__mutex);
 				data = __work->front();
 				__work->pop();
 			}
-			
+
 			// read the config if we haven't read it yet
 			if(!__config_read) {
 				readConfig();
 			}
-			
+
 			// start working
 			unsigned int timestep;
 			double ln_f;
 			ub::matrix<double> dos(N1,N2);
 			*data >> timestep;
 			*data >> ln_f;
-			
+
 			cout << "processing DoS " << std::setw(20) << std::right <<	 timestep << std::setw(20) << std::right << ln_f << endl;
-			
+
 			double max = 0.0;
 			for(unsigned int i = 0; i < N1; i++) {
 				for(unsigned int j = 0; j < N2; j++) {
@@ -104,7 +104,7 @@ public:
 					max = std::max(max,dos(i,j));
 				}
 			}
-			
+
 			stringstream filename;
 			filename<< "dos/dos3_"
 					<< std::setw(15) << std::right << std::setfill('0') << timestep
@@ -115,7 +115,7 @@ public:
 			out << *__config_str;
 			out << "# timestep\t" << timestep << "\n";
 			out << "# ln_f\t" << ln_f << "\n";
-			
+
 			double Eoffset = Emin+(EbinWidth/2.0);
 			for (unsigned i = 0; i < N1; ++i) {
 				for (unsigned j = 0; j < N2; ++j) {
@@ -135,54 +135,54 @@ public:
 int main (int argc, char const *argv[])
 {
 	using namespace boost::filesystem;
-	
+
 	string line;
 	bool done = false;
 
 	// last known timestep
 	int last_timestep = 0;
-	
+
 	// Filestreams
 	boost::iostreams::filtering_ostream parq, data, output, data_hist, stat, data_hist_full;
-	
+
 	// open file for parq-data with gzip comrpession
 	//parq.push(boost::iostreams::gzip_compressor());
 	parq.push(boost::iostreams::file_sink("parq.dat.info"));
-	
+
 	// open file for some statistical data
 	data.push(boost::iostreams::file_sink("wang_landau.dat"));
 	data_hist.push(boost::iostreams::file_sink("wang_landau_hist.dat"));
 	data_hist_full.push(boost::iostreams::file_sink("wang_landau_hist_full.dat"));
 	stat.push(boost::iostreams::file_sink("wang_landau_stat.dat"));
-	
+
 	// open file for output of towhee (compressed)
 	output.push(boost::iostreams::gzip_compressor());
 	output.push(boost::iostreams::file_sink("output.gz"));
-	
+
 	// map for config-data
 	config_type config;
-	
+
 	// work queue
 	work_type work;
 	boost::mutex work_mutex;
-	
+
 	// string for config-output
 	string config_str;
-	
+
 	// starting thread
 	boost::thread matrix_thrd(MatrixThread(&work, &config, &work_mutex, &done, &config_str));
-	
+
 	// paths for the different filetypes
 	path histPath("./histograms/");
 	path dosPath("./dos/");
-	
+
 	if(!exists(histPath) || !is_directory(histPath)) {
 		create_directory(histPath);
 	}
 	if(!exists(dosPath) || !is_directory(dosPath)) {
 		create_directory(dosPath);
 	}
-	
+
 	while(getline(cin, line)) {
 		unsigned int line_size = line.size();
 		if(line_size > 7 && line.compare(0,4," WL#") == 0) {
@@ -245,7 +245,7 @@ int main (int argc, char const *argv[])
 				//boost::iostreams::copy(config_str, dosFile);
 				dosFile << config_str;
 				dosFile << "# timestep\t" << timestep << "\n# ln_f\t" << ln_f << "\n";
-				
+
 				while(getline(cin, line)) {
 					if(line.compare(4,8,"matr_end") != 0) {
 						lines++;
@@ -363,7 +363,7 @@ int main (int argc, char const *argv[])
 			output << line << "\n";
 			//cout << line << endl;
 		}
-		
+
 	}
 	done = true;
 	matrix_thrd.join();

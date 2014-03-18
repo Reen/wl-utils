@@ -139,7 +139,6 @@ public:
     outer_rows_ = o_r;
     inner_cols_ = i_c;
     inner_rows_ = i_r;
-    std::cout << "size: " << outer_cols_ << " " << outer_rows_ << " " << inner_cols_ << " " << inner_rows_ << "\n";
 
     if(do_resize) {
         resize();
