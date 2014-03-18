@@ -34,28 +34,58 @@ class MatrixThread {
 	work_type* __work;
 	config_type* __config;
 	boost::mutex* __mutex;
-	unsigned int N1,N2,Nmin;
-	double dE, EbinWidth, Emin, Emax;
+	unsigned int N1,N2,Nmin,Nmax;
+	double dE, EbinWidth, Emin, Emax,Vmin,Vmax, VbinWidth;
 	bool* __done;
 	bool __config_read;
 	std::string* __config_str;
-	
+	unsigned int ensemble;
+
 	void readConfig() {
-		Nmin = (unsigned int)((*__config)["nmin"]);
-		N1 = (unsigned int)((*__config)["nmax"]-(*__config)["nmin"]+1);
 		N2 = (unsigned int)((*__config)["E_N"]);
 		Emin = (*__config)["emin"];
 		Emax = (*__config)["emax"];
 		dE = Emax-Emin;
 		EbinWidth = dE/N2;
-		cout <<"Simulation startet with:\n"
-			<< std::setw(12) << "Nmin:"			<< std::setw(12) << std::right << Nmin	<< "\n"
-			<< std::setw(12) << "N:"			<< std::setw(12) << std::right << N1	<< "\n"
-			<< std::setw(12) << "E_N:"			<< std::setw(12) << std::right << N2	<< "\n"
-			<< std::setw(12) << "Emin:"			<< std::setw(12) << std::right << Emin	<< "\n"
-			<< std::setw(12) << "Emax:"			<< std::setw(12) << std::right << Emax	<< "\n"
-			<< std::setw(12) << "Ediff:"		<< std::setw(12) << std::right << dE	<< "\n"
-			<< std::setw(12) << "EbinWidth:"	<< std::setw(12) << std::right << EbinWidth << endl;
+
+		ensemble = (unsigned int)((*__config)["ens"]);
+		if (ensemble == 157) { /* NPT */
+			N1   = (unsigned int)((*__config)["V_N"]);
+			Vmin = (*__config)["vmin"];
+			Vmax = (*__config)["vmax"];
+			Nmin = (unsigned int)((*__config)["N_N"]);
+			VbinWidth = (Vmax-Vmin)/N1;
+
+			cout <<"Simulation startet with:\n"
+			<< std::setw(12) << "N:"         << std::setw(12) << std::right << Nmin      << "\n"
+			<< std::setw(12) << "V_N:"       << std::setw(12) << std::right << N1        << "\n"
+			<< std::setw(12) << "Vmin:"      << std::setw(12) << std::right << Vmin      << "\n"
+			<< std::setw(12) << "Vmax:"      << std::setw(12) << std::right << Vmax      << "\n"
+			<< std::setw(12) << "VbinWidth:" << std::setw(12) << std::right << VbinWidth << "\n"
+			<< std::setw(12) << "E_N:"       << std::setw(12) << std::right << N2        << "\n"
+			<< std::setw(12) << "Emin:"      << std::setw(12) << std::right << Emin      << "\n"
+			<< std::setw(12) << "Emax:"      << std::setw(12) << std::right << Emax      << "\n"
+			<< std::setw(12) << "Ediff:"     << std::setw(12) << std::right << dE        << "\n"
+			<< std::setw(12) << "EbinWidth:" << std::setw(12) << std::right << EbinWidth << endl;
+		} else if (ensemble == 158) { /* muVT */
+			Nmin = (unsigned int)((*__config)["nmin"]);
+			Nmax = (unsigned int)((*__config)["nmax"]);
+			N1   = (unsigned int)((*__config)["nmax"]-Nmin+1);
+
+			cout <<"Simulation startet with:\n"
+			<< std::setw(12) << "Nmin:"      << std::setw(12) << std::right << Nmin      << "\n"
+			<< std::setw(12) << "Nmax:"      << std::setw(12) << std::right << Nmax      << "\n"
+			<< std::setw(12) << "N:"         << std::setw(12) << std::right << N1        << "\n"
+			<< std::setw(12) << "E_N:"       << std::setw(12) << std::right << N2        << "\n"
+			<< std::setw(12) << "Emin:"      << std::setw(12) << std::right << Emin      << "\n"
+			<< std::setw(12) << "Emax:"      << std::setw(12) << std::right << Emax      << "\n"
+			<< std::setw(12) << "Ediff:"     << std::setw(12) << std::right << dE        << "\n"
+			<< std::setw(12) << "EbinWidth:" << std::setw(12) << std::right << EbinWidth << endl;
+		} else {
+			std::cerr << "Unknown ensemble!" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
 		__config_read = true;
 	}
 public:
@@ -117,12 +147,25 @@ public:
 			out << "# ln_f\t" << ln_f << "\n";
 
 			double Eoffset = Emin+(EbinWidth/2.0);
-			for (unsigned i = 0; i < N1; ++i) {
-				for (unsigned j = 0; j < N2; ++j) {
-					if(dos(i,j) > 0.0) {
-						out << std::setw(20) << std::right << (Nmin+i)
-							<< std::setw(20) << std::right << (EbinWidth*j+Eoffset)
-							<< std::setw(20) << std::right << (dos(i,j)-max) << endl;
+			if (ensemble == 157) { /* NpT */
+				double Voffset = Vmin+(VbinWidth/2.0);
+				for (unsigned i = 0; i < N1; ++i) {
+					for (unsigned j = 0; j < N2; ++j) {
+						if(dos(i,j) > 0.0) {
+							out << std::setw(20) << std::right << (VbinWidth*i+Voffset)
+								<< std::setw(20) << std::right << (EbinWidth*j+Eoffset)
+								<< std::setw(20) << std::right << (dos(i,j)-max) << endl;
+						}
+					}
+				}
+			} else if (ensemble == 158) { /* muVT */
+				for (unsigned i = 0; i < N1; ++i) {
+					for (unsigned j = 0; j < N2; ++j) {
+						if(dos(i,j) > 0.0) {
+							out << std::setw(20) << std::right << (Nmin+i)
+								<< std::setw(20) << std::right << (EbinWidth*j+Eoffset)
+								<< std::setw(20) << std::right << (dos(i,j)-max) << endl;
+						}
 					}
 				}
 			}

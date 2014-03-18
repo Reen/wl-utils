@@ -17,11 +17,67 @@
 namespace io = boost::iostreams;
 namespace ublas = boost::numeric::ublas;
 
+void print_dos_npt(const std::string& prefix,
+                   const QMatrix<double>::dos_matrix_t& dos,
+                   std::size_t iteration, bool print_all=true,
+                   bool already_log=false) {
+  char filename[5000];
+  State::lease s;
+  snprintf(filename, 5000, "%s%s.%06lu.dat.gz",
+          s->working_directory().c_str(),
+          prefix.c_str(),
+          iteration);
+
+  double ln_vmin = log((double)(s->min_particles()));
+  double ln_vmax = log((double)(s->max_particles()));
+  double ln_vbinwidth = (ln_vmax - ln_vmin)/s->n_particles();
+  double minEnergy(s->min_energy());
+  double maxEnergy(s->max_energy());
+  double energyBinWidth(s->energy_bin_width());
+
+  io::filtering_ostream out;
+  out.push(io::gzip_compressor());
+  out.push(io::file_sink(filename));
+  s->print_to_stream(out);
+
+  out << "#"
+      << std::setw(18) << std::right << "lnV"
+      << std::setw(19) << std::right << "energy"
+      << std::setw(19) << std::right << "ln_omega"
+      << std::setw(19) << std::right << "omega"
+      << std::setw(19) << std::right << "V"
+      << "\n";
+  for (std::size_t i = 0; i < dos.size1(); ++i) {
+    for (std::size_t j = 0; j < dos.size2(); ++j) {
+      if (print_all || dos(i,j) > 0) {
+        double ndos, log_dos;
+        if (already_log) {
+          log_dos = dos(i,j);
+          ndos    = exp(dos(i,j));
+        } else {
+          log_dos = log(dos(i,j));
+          ndos    = dos(i,j);
+        }
+        out << std::setw(19) << std::right << (ln_vmin + i*ln_vbinwidth + ln_vbinwidth/2.0)
+            << std::setw(19) << std::right << s->bin_to_energy(j)
+            << std::setw(19) << std::right << log_dos
+            << std::setw(19) << std::right << ndos
+            << std::setw(19) << std::right << exp(ln_vmin + i*ln_vbinwidth + ln_vbinwidth/2.0)
+            << "\n";
+      }
+    }
+  }
+}
+
 void print_dos(const std::string& prefix,
                const QMatrix<double>::dos_matrix_t& dos,
                std::size_t iteration, bool print_all=true, bool already_log=false) {
   char filename[5000];
   State::lease s;
+  if (s->ensemble() == 2) {
+    print_dos_npt(prefix, dos, iteration, print_all, already_log);
+    return;
+  }
   snprintf(filename, 5000, "%s%s.%06lu.dat.gz",
           s->working_directory().c_str(),
           prefix.c_str(),

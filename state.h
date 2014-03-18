@@ -30,16 +30,18 @@ struct MatrixHeader {
 #pragma pack(push)
 #pragma pack(1)
 struct MatrixSettings {
-  uint32_t min_particles;
-  uint32_t max_particles;
-  uint32_t n_particles;
+  uint32_t ensemble;      // 1 – muVT, 2 – NpT
+  uint32_t min_particles; // or min_volume
+  uint32_t max_particles; // or max_volume
+  uint32_t n_particles;   // or v_bins
   double min_energy;
   double max_energy;
   double energy_bin_width;
   uint32_t n_energy;
   double volume;
   bool operator==(const MatrixSettings &rhs) const {
-    return (  min_particles == rhs.min_particles
+    return (       ensemble == rhs.ensemble
+        &&    min_particles == rhs.min_particles
         &&    max_particles == rhs.max_particles
         &&      n_particles == rhs.n_particles
         &&       min_energy == rhs.min_energy
@@ -98,6 +100,7 @@ private:
 public:
   State(boost::restricted) {}
 
+  const uint32_t& ensemble() const {return data.settings.ensemble; }
   const uint32_t& min_particles() const { return data.settings.min_particles; }
   const uint32_t& max_particles() const { return data.settings.max_particles; }
   const uint32_t& n_particles() const { return data.settings.n_particles; }
@@ -174,17 +177,31 @@ public:
   }
 
   void print_to_stream(std::ostream& os) {
-    os
-    << "# towhee   " << data.githead                   << "\n"
-    << "# timestep " << data.header.timestep           << "\n"
-    << "# nmin     " << data.settings.min_particles    << "\n"
-    << "# nmax     " << data.settings.max_particles    << "\n"
-    << "# emin     " << data.settings.min_energy       << "\n"
-    << "# emax     " << data.settings.max_energy       << "\n"
-    << "# binwidth " << data.settings.energy_bin_width << "\n"
-    << "# N_N      " << data.settings.n_particles      << "\n"
-    << "# E_N      " << data.settings.n_energy         << "\n"
-    << "# volume   " << data.settings.volume           << "\n";
+    os << "# towhee    " << data.githead
+       << "\n# timestep  " << data.header.timestep;
+    if (data.settings.ensemble == 1) {
+      os << "\n# ensemble  " << "muVT"
+         << "\n# nmin      " << data.settings.min_particles
+         << "\n# nmax      " << data.settings.max_particles;
+    } else if (data.settings.ensemble == 2) {
+      double ln_vmin = log((double)(data.settings.min_particles));
+      double ln_vmax = log((double)(data.settings.max_particles));
+      double ln_vbinwidth = (ln_vmax - ln_vmin)/data.settings.n_particles;
+      os << "\n# ensemble  " << "NpT"
+         << "\n# vmin      " << data.settings.min_particles
+         << "\n# vmax      " << data.settings.max_particles
+         << "\n# ln_vmin   " << ln_vmin
+         << "\n# ln_vmax   " << ln_vmax
+         << "\n# vbins     " << data.settings.n_particles
+         << "\n# vbinwidth " << ln_vbinwidth;
+    }
+    os << "\n# emin      " << data.settings.min_energy
+       << "\n# emax      " << data.settings.max_energy
+       << "\n# binwidth  " << data.settings.energy_bin_width
+       << "\n# N_N       " << data.settings.n_particles
+       << "\n# E_N       " << data.settings.n_energy
+       << "\n# volume    " << data.settings.volume
+       << "\n";
   }
 
   void save_to(io::filtering_ostream &out) {
@@ -197,7 +214,7 @@ public:
 
   void load_from(io::filtering_istream &in) {
     in.read((char*)&(data.header), sizeof(MatrixHeader));
-    if (data.header.version != 1) {
+    if (data.header.version != 2) {
       throw std::runtime_error("Unknown parq matrix file version.");
     }
     if (data.header.githead_strlen > 0) {
