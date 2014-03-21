@@ -106,6 +106,8 @@ bool fileLimitReached(std::size_t num_files) {
       std::cerr << "More matrix files specified than number of files allowed to be opened.\n"
                    "Please raise ulimit -n..." << std::endl;
       return true;
+    } else {
+      return false;
     }
   }
 }
