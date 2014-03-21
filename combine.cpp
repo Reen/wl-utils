@@ -26,7 +26,7 @@ int combine(std::vector<std::string> files) {
   uint32_t mtype, timestep, ghstrlen;
   uint32_t outer_cols, outer_rows, inner_cols, inner_rows;
   char githead[100];
-  const std::size_t settingslen = 4 * sizeof(uint32_t) + 4 * sizeof(double);
+  std::size_t settingslen = 5 * sizeof(uint32_t) + 4 * sizeof(double);
   char settings[settingslen];
   // we can copy / assign filtering_istreams, so we use a vector of shared pointers
   typedef boost::shared_ptr<io::filtering_istream> filter_type;
@@ -39,6 +39,7 @@ int combine(std::vector<std::string> files) {
   ublas::matrix<int32_t> sum, mtmp;
   // check for limit of open files
   if (fileLimitReached(files.size())) {
+    std::cerr << "Reached file limit." << std::endl;
     return EXIT_FAILURE;
   }
   for (int i = 0; i < files.size(); i++) {
@@ -48,11 +49,14 @@ int combine(std::vector<std::string> files) {
     openMatrixFileRead(*ins[i], files[i], cts[i]);
     // version
     ins[i]->read((char*)&tmp, sizeof(tmp));
-    if (tmp != 1) {
+    if (tmp < 1 || tmp > 2) {
       throw std::runtime_error("Unknown parq matrix file version.");
     }
     if (version == 0) {
       version = tmp;
+    }
+    if (version == 1) {
+      std::size_t settingslen = 4 * sizeof(uint32_t) + 4 * sizeof(double);
     }
     if (tmp != version) {
       throw std::runtime_error("Matrix files have different versions.");
